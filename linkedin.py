@@ -20,7 +20,6 @@ class LinkedInParser(object):
                             'Windows NT 5.2; .NET CLR 1.1.4322)'))
         ]
         self.get_info()
-        print self.info
 
     def load_page(self, url, data=None):
         """
@@ -80,7 +79,8 @@ class LinkedInParser(object):
 
         self.info['past'] = past_employers
 
-        return
+    def get_profile(self):
+        return self.info
 
 profile = "https://www.linkedin.com/in/carolinecheese"
 parser = LinkedInParser(profile)
