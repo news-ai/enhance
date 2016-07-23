@@ -81,6 +81,3 @@ class LinkedInParser(object):
 
     def get_profile(self):
         return self.info
-
-profile = "https://www.linkedin.com/in/carolinecheese"
-parser = LinkedInParser(profile)
