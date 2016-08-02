@@ -18,10 +18,8 @@ class InfluencerService(BaseHTTPRequestHandler):
         raw_text = raw_text.decode('utf8')
         influencer_result = self.extract(raw_text)
 
-        print influencer_result
-
         self.send_response(200)
-        self.send_header("Content-Type", "text/javascript; charset=UTF-8")
+        self.send_header("Content-Type", "application/json; charset=UTF-8")
         self.end_headers()
 
         self.wfile.write(json.dumps(influencer_result.get_profile()))
