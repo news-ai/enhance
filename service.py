@@ -16,7 +16,7 @@ class InfluencerService(webapp2.RequestHandler):
     def post(self):
         jsonobject = json.loads(self.request.body)
         influencer_result = self.extract(jsonobject["url"])
-        
+
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(influencer_result.get_profile()))
 

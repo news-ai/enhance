@@ -16,8 +16,7 @@ class LinkedInParser(object):
             urllib2.HTTPSHandler(debuglevel=0),
         )
         self.opener.addheaders = [
-            ('User-agent', ('Mozilla/4.0 (compatible; MSIE 6.0; '
-                            'Windows NT 5.2; .NET CLR 1.1.4322)'))
+            ('User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36")
         ]
         self.get_info()
 
