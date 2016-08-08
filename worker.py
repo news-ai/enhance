@@ -13,4 +13,4 @@ if __name__ == '__main__':
         messages = sub.pull(return_immediately=False, max_messages=2)
         if messages:
             for ack_id, message in messages:
-                print message
+                print message.data
