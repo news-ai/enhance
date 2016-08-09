@@ -1,6 +1,9 @@
 import os
+import json
 from gcloud import storage, pubsub
 import sys
+
+from influencer.sync import linkedin_sync
 
 
 PROJECT_ID = 'newsai-1166'
@@ -13,7 +16,7 @@ if __name__ == '__main__':
         messages = sub.pull(return_immediately=False, max_messages=2)
         if messages:
             for ack_id, message in messages:
-                print message.data
-
+                json_data = json.loads(message.data)
+                linkedin_sync.delay(json_data["linkedinUrl"], json_data["Id"])
                 # Acknowledge that we've gotten the message
-                # sub.acknowledge([ack_id])
+                sub.acknowledge([ack_id])
