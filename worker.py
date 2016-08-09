@@ -14,3 +14,6 @@ if __name__ == '__main__':
         if messages:
             for ack_id, message in messages:
                 print message.data
+
+                # Acknowledge that we've gotten the message
+                # sub.acknowledge([ack_id])
