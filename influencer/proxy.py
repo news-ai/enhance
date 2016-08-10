@@ -17,8 +17,8 @@ def construct_opener():
     proxy = urllib2.ProxyHandler({'http': proxy_cycle.next()})
     opener = urllib2.build_opener(
         proxy,
-        urllib2.HTTPRedirectHandler(),
-        urllib2.HTTPHandler(debuglevel=0),
-        urllib2.HTTPSHandler(debuglevel=0),
+        # urllib2.HTTPRedirectHandler(),
+        # urllib2.HTTPHandler(debuglevel=0),
+        # urllib2.HTTPSHandler(debuglevel=0),
     )
     return opener
