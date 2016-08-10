@@ -1,8 +1,12 @@
+# Stdlib imports
 import os
 import json
-from gcloud import storage, pubsub
 import sys
 
+# Third-party app imports
+from gcloud import pubsub
+
+# Imports from app
 from influencer.sync import linkedin_sync
 
 

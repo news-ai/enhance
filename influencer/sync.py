@@ -1,9 +1,56 @@
+# Stdlib imports
+import datetime
+
+# Third-party app imports
+from gcloud import datastore
+
 # Imports from app
 from influencer.linkedin import LinkedInParser
 from taskrunner import app
 
+client = datastore.Client('newsai-1166')
+
+
+def find_or_create_publisher(publisher_name):
+    # Try get the publication
+    query = client.query(kind='Publication')
+    query.add_filter('Name', '=', publisher_name)
+    results = list(query.fetch())
+    if len(results) > 0:
+        result = results[0]
+        return result.key.id
+
+    # Otherwise add it
+    incomplete_key = client.key('Publication')
+    new_publication = datastore.Entity(key=incomplete_key)
+
+    publisher_name = unicode(publisher_name, "utf-8")
+    current_time = datetime.datetime.utcnow()
+
+    new_publication.update({
+        'Name': publisher_name,
+        'Created': current_time,
+        'Updated': current_time,
+        'CreatedBy': 0
+    })
+    client.put(new_publication)
+
+    # Return key
+    return new_publication.key.id
+
+
+def update_datastore(linkedin_data, contact_id):
+    key = client.key('Contact', int(contact_id))
+    result = client.get(key)
+    result["Employers"] = []
+    result["PastEmployers"] = []
+
 
 @app.task
-def linkedin_sync(linkedin_url, contact_url):
+def linkedin_sync(linkedin_url, contact_id):
     linkedin_result = LinkedInParser(linkedin_url)
-    print linkedin_result.get_profile()
+    linkedin_data = linkedin_result.get_profile()
+    if linkedin_data is None:
+        return False
+    update_datastore(linkedin_data, contact_id)
+    return True
