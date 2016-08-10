@@ -1,7 +1,11 @@
-import urllib2
+# Stdlib imports
 import re
 import string
+
+# Third-party app imports
 from bs4 import BeautifulSoup
+import urllib2
+import zlib
 
 
 class LinkedInParser(object):
@@ -16,8 +20,13 @@ class LinkedInParser(object):
             urllib2.HTTPSHandler(debuglevel=0),
         )
         self.opener.addheaders = [
-            ('User-agent', ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36'))
+            ('User-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'),
+            ('Accept-Language', 'en-US,en;q=0.8'),
+            ('Accept-Encoding', 'gzip, deflate, sdch, br'),
+            ('Accept', 'text/html'),
+            ('Upgrade-Insecure-Requests', '1'),
         ]
+
         self.get_info()
 
     def load_page(self, url, data=None):
@@ -50,11 +59,13 @@ class LinkedInParser(object):
     def get_info(self):
         # gets all info = current jobs, previous jobs
         html = self.load_page(self.link)
+        html = decompressed_data=zlib.decompress(html, 16+zlib.MAX_WBITS)
         soup = BeautifulSoup(html, 'html.parser')
         htmlcode = soup.prettify(soup.original_encoding)
         experience = soup.find(id="experience")
 
-        print experience
+        if experience is None:
+            return False
 
         # gets current job
         current_jobs = []

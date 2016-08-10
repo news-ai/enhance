@@ -42,7 +42,6 @@ def find_or_create_publisher(publisher_name):
 def update_datastore(linkedin_data, contact_id):
     key = client.key('Contact', int(contact_id))
     result = client.get(key)
-    print result
     result["Employers"] = []
     result["PastEmployers"] = []
 
@@ -65,8 +64,13 @@ def update_datastore(linkedin_data, contact_id):
 def linkedin_sync(linkedin_url, contact_id):
     linkedin_result = LinkedInParser(linkedin_url)
     linkedin_data = linkedin_result.get_profile()
-    print linkedin_data
+
+    # Both of these cases mean that the data did not load
     if linkedin_data is None:
         return False
+    if bool(linkedin_data) is False:
+        return False
+
+    # Data loaded from Linkedin
     update_datastore(linkedin_data, contact_id)
     return True
