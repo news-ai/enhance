@@ -54,6 +54,8 @@ class LinkedInParser(object):
         htmlcode = soup.prettify(soup.original_encoding)
         experience = soup.find(id="experience")
 
+        print experience
+
         # gets current job
         current_jobs = []
         for i in experience.find_all(class_="position"):
