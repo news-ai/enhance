@@ -14,7 +14,7 @@ proxy_cycle = cycle(proxies)
 
 
 def construct_opener():
-    proxy = urllib2.ProxyHandler({'http': proxy_cycle.next()})
+    proxy = urllib2.ProxyHandler({'https': proxy_cycle.next()})
     opener = urllib2.build_opener(
         proxy,
         # urllib2.HTTPRedirectHandler(),
