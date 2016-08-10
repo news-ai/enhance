@@ -7,6 +7,9 @@ from bs4 import BeautifulSoup
 import urllib2
 import zlib
 
+# Imports from app
+from influencer.proxy import construct_opener
+
 
 class LinkedInParser(object):
 
@@ -14,11 +17,7 @@ class LinkedInParser(object):
         """ Start up... """
         self.link = link
         self.info = {}
-        self.opener = urllib2.build_opener(
-            urllib2.HTTPRedirectHandler(),
-            urllib2.HTTPHandler(debuglevel=0),
-            urllib2.HTTPSHandler(debuglevel=0),
-        )
+        self.opener = construct_opener()
         self.opener.addheaders = [
             ('User-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'),
             ('Accept-Language', 'en-US,en;q=0.8'),
@@ -59,7 +58,7 @@ class LinkedInParser(object):
     def get_info(self):
         # gets all info = current jobs, previous jobs
         html = self.load_page(self.link)
-        html = decompressed_data=zlib.decompress(html, 16+zlib.MAX_WBITS)
+        html = decompressed_data = zlib.decompress(html, 16 + zlib.MAX_WBITS)
         soup = BeautifulSoup(html, 'html.parser')
         htmlcode = soup.prettify(soup.original_encoding)
         experience = soup.find(id="experience")
