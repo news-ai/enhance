@@ -4,7 +4,8 @@ import string
 
 # Third-party app imports
 from bs4 import BeautifulSoup
-import urllib2
+from requests.auth import HTTPProxyAuth
+import requests
 import zlib
 
 # Imports from app
@@ -17,14 +18,13 @@ class LinkedInParser(object):
         """ Start up... """
         self.link = link
         self.info = {}
-        self.opener = construct_opener()
-        self.opener.addheaders = [
-            ('User-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'),
-            ('Accept-Language', 'en-US,en;q=0.8'),
-            ('Accept-Encoding', 'gzip, deflate, sdch, br'),
-            ('Accept', 'text/html'),
-            ('Upgrade-Insecure-Requests', '1'),
-        ]
+
+        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_port = "8010"
+        self.proxy_auth = HTTPProxyAuth("d3f8e7a7ef0a4745a85abe3fcedaa390", "")
+
+        self.proxies = {
+            "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
         self.get_info()
 
@@ -33,32 +33,14 @@ class LinkedInParser(object):
         Utility function to load HTML from URLs for us with hack to continue despite 404
         """
 
-        if data is not None:
-            response = self.opener.open(url, data)
-        else:
-            response = self.opener.open(url)
+        r = requests.get(url, proxies=self.proxies, auth=self.proxy_auth,
+                         verify='./crawlera-ca.crt')
 
-        return ''.join(response.readlines())
-
-        # print the url in case of infinite loop
-        # print "Loading URL: %s" % url
-        '''
-        try:
-            if data is not None:
-                response = self.opener.open(url, data)
-            else:
-                response = self.opener.open(url)
-            return ''.join(response.readlines())
-        except:
-            # If URL doesn't load for ANY reason, try again...
-            # Quick and dirty solution for 404 returns because of network problems
-            # However, this could infinite loop if there's an actual problem
-            return self.load_page(url, data) '''
+        return r.text
 
     def get_info(self):
         # gets all info = current jobs, previous jobs
         html = self.load_page(self.link)
-        html = decompressed_data = zlib.decompress(html, 16 + zlib.MAX_WBITS)
         soup = BeautifulSoup(html, 'html.parser')
         htmlcode = soup.prettify(soup.original_encoding)
         experience = soup.find(id="experience")

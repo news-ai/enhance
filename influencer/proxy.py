@@ -4,21 +4,22 @@ from itertools import cycle
 # Third-party app imports
 import urllib2
 
-proxies = [
-    "201.172.124.203",
-    "120.198.248.96",
-    "113.254.104.207",
-    "203.210.8.41"
-]
-proxy_cycle = cycle(proxies)
-
 
 def construct_opener():
-    proxy = urllib2.ProxyHandler({'https': proxy_cycle.next()})
+
+
+    # Authentication
+    password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+    url = 'proxy.crawlera.com:8010'
+    username = 'd3f8e7a7ef0a4745a85abe3fcedaa390'
+    password = ''
+    password_mgr.add_password(None, url, username, password)
+    auth_handler = urllib2.HTTPBasicAuthHandler(password_mgr)
+
+    print 'g'
+
+    # Setup proxy
     opener = urllib2.build_opener(
-        proxy,
-        # urllib2.HTTPRedirectHandler(),
-        # urllib2.HTTPHandler(debuglevel=0),
-        # urllib2.HTTPSHandler(debuglevel=0),
+        auth_handler,
     )
     return opener
