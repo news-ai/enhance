@@ -61,17 +61,24 @@ def update_datastore(linkedin_data, contact_id):
 
 
 @app.task
-def linkedin_sync(linkedin_url, contact_id):
+def linkedin_sync(linkedin_url, contact_id, just_created):
     linkedin_result = LinkedInParser(linkedin_url)
     linkedin_data = linkedin_result.get_profile()
 
     # Both of these cases mean that the data did not load
     if linkedin_data is None:
-        # Try for a second time
-        linkedin_result = LinkedInParser(linkedin_url)
-        linkedin_data = linkedin_result.get_profile()
+        # If the data is false and they just created it
+        # Then we'll try a little harder
+        if just_created:
+            # Re-try five more times
+            for x in xrange(1, 5):
+                linkedin_result = LinkedInParser(linkedin_url)
+                linkedin_data = linkedin_result.get_profile()
+                if linkedin_data is not None:
+                    break
 
     # Lets see if it works this time!
+    # If not then something is invalid
     if bool(linkedin_data) is False:
         return False
 

@@ -22,7 +22,7 @@ if __name__ == '__main__':
             for ack_id, message in messages:
                 # Parse JSON data and begin linkedin sync
                 json_data = json.loads(message.data)
-                linkedin_sync.delay(json_data["linkedinUrl"], json_data["Id"])
+                linkedin_sync.delay(json_data["linkedinUrl"], json_data["Id"], json_data["justCreated"])
                 
                 # Acknowledge that we've gotten the message right away
                 sub.acknowledge([ack_id])
