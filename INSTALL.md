@@ -50,4 +50,15 @@ cd utils
 sudo ./install_server.sh
 sudo service redis_6379 start
 sudo service redis_6379 stop
+
+cd ~/.ssh/
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_rsa
+
+Put it on github
+
+sudo apt-get install git
+cd /var/apps/influencer
+git clone git@github.com:news-ai/influencer.git
 ```

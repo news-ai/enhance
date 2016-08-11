@@ -8,9 +8,6 @@ from requests.auth import HTTPProxyAuth
 import requests
 import zlib
 
-# Imports from app
-from influencer.proxy import construct_opener
-
 
 class LinkedInParser(object):
 
