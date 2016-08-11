@@ -18,10 +18,10 @@ if __name__ == '__main__':
     sub = pubsub.Subscription("influencer_sub", topic=topic)
     while True:
         messages = sub.pull(return_immediately=False, max_messages=2)
-
-        # Acknowledge that we've gotten the message right away
-        sub.acknowledge([ack_id])
         if messages:
             for ack_id, message in messages:
                 json_data = json.loads(message.data)
                 linkedin_sync.delay(json_data["linkedinUrl"], json_data["Id"])
+                
+                # Acknowledge that we've gotten the message right away
+                sub.acknowledge([ack_id])
