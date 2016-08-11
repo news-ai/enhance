@@ -23,14 +23,20 @@ sudo apt-get update
 sudo apt-get install python-pip python-dev libpq-dev
 
 sudo pip install virtualenv
+
+cd /var
+mkdir apps
+sudo chown -R `whoami`:root apps
+
 mkdir ~/influencer
 cd ~/influencer
 virtualenv env
 source env/bin/activate
 
-sudo apt install libpq-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev
+sudo apt install libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev
 
 # Install redis
+cd
 sudo apt-get update
 sudo apt-get install build-essential
 sudo apt-get install tcl8.5
