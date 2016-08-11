@@ -20,6 +20,7 @@ if __name__ == '__main__':
         messages = sub.pull(return_immediately=False, max_messages=2)
         if messages:
             for ack_id, message in messages:
+                # Parse JSON data and begin linkedin sync
                 json_data = json.loads(message.data)
                 linkedin_sync.delay(json_data["linkedinUrl"], json_data["Id"])
                 

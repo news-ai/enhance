@@ -67,7 +67,11 @@ def linkedin_sync(linkedin_url, contact_id):
 
     # Both of these cases mean that the data did not load
     if linkedin_data is None:
-        return False
+        # Try for a second time
+        linkedin_result = LinkedInParser(linkedin_url)
+        linkedin_data = linkedin_result.get_profile()
+
+    # Lets see if it works this time!
     if bool(linkedin_data) is False:
         return False
 
