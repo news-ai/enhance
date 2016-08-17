@@ -72,7 +72,7 @@ def linkedin_sync(linkedin_url, contact_id, just_created):
     linkedin_data = linkedin_result.get_profile()
 
     # Both of these cases mean that the data did not load
-    if linkedin_data is None:
+    if not linkedin_data:
         logger.log_text("Linkedin data not found for: ", contact_id)
         # If the data is false and they just created it
         # Then we'll try a little harder
@@ -83,15 +83,14 @@ def linkedin_sync(linkedin_url, contact_id, just_created):
         for x in xrange(1, retry_number):
             linkedin_result = LinkedInParser(linkedin_url)
             linkedin_data = linkedin_result.get_profile()
-            if linkedin_data is not None:
+            if linkedin_data:
                 logger.log_text("Linkedin data found for: ", contact_id)
                 print linkedin_data
                 break
 
-    print linkedin_data
     # Lets see if it works this time!
     # If not then something is invalid
-    if bool(linkedin_data) is False:
+    if not linkedin_data:
         return False
 
     # Data loaded from Linkedin
