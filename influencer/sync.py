@@ -11,7 +11,8 @@ from taskrunner import app
 
 client = datastore.Client('newsai-1166')
 
-logger = client.logger('influencer')
+log_client = logging.Client('newsai-1166')
+logger = log_client.logger('influencer')
 
 
 def find_or_create_publisher(publisher_name):
