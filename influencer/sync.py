@@ -3,16 +3,12 @@ import datetime
 
 # Third-party app imports
 from gcloud import datastore
-from gcloud import logging
 
 # Imports from app
 from influencer.linkedin import LinkedInParser
 from taskrunner import app
 
 client = datastore.Client('newsai-1166')
-
-log_client = logging.Client('newsai-1166')
-logger = log_client.logger('influencer')
 
 
 def find_or_create_publisher(publisher_name):
@@ -73,7 +69,6 @@ def linkedin_sync(linkedin_url, contact_id, just_created):
 
     # Both of these cases mean that the data did not load
     if not linkedin_data:
-        logger.log_text("Linkedin data not found for: ", contact_id)
         # If the data is false and they just created it
         # Then we'll try a little harder
         retry_number = 5
@@ -84,7 +79,6 @@ def linkedin_sync(linkedin_url, contact_id, just_created):
             linkedin_result = LinkedInParser(linkedin_url)
             linkedin_data = linkedin_result.get_profile()
             if linkedin_data:
-                logger.log_text("Linkedin data found for: ", contact_id)
                 print linkedin_data
                 break
 
