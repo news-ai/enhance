@@ -78,6 +78,7 @@ def linkedin_sync(linkedin_url, contact_id, just_created):
         for x in xrange(1, retry_number):
             linkedin_result = LinkedInParser(linkedin_url)
             linkedin_data = linkedin_result.get_profile()
+            print linkedin_data
             if linkedin_data:
                 print linkedin_data
                 break
