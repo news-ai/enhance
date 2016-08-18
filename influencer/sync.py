@@ -1,8 +1,10 @@
 # Stdlib imports
 import datetime
+import json
 
 # Third-party app imports
 from gcloud import datastore
+import requests
 
 # Imports from app
 from influencer.linkedin import LinkedInParser
@@ -40,26 +42,31 @@ def find_or_create_publisher(publisher_name):
 
 
 def update_datastore(linkedin_data, contact_id):
-    print linkedin_data
-
     key = client.key('Contact', int(contact_id))
     result = client.get(key)
-    result["Employers"] = []
-    result["PastEmployers"] = []
+
+    post_data = {}
+    post_data["employers"] = []
+    post_data["pastemployers"] = []
 
     # Current jobs
     if linkedin_data['current']:
         for job in linkedin_data['current']:
             employer_id = find_or_create_publisher(job['employer'])
-            result["Employers"].append(employer_id)
+            post_data["employers"].append(employer_id)
 
     # Past jobs
     if linkedin_data['past']:
         for job in linkedin_data['past']:
             employer_id = find_or_create_publisher(job['employer'])
-            result["PastEmployers"].append(employer_id)
+            post_data["pastemployers"].append(employer_id)
 
-    client.put(result)
+    # Post data
+    json_data = json.dumps(post_data)
+    r = requests.patch(
+        "https://tabulae.newsai.org/api/contacts/" + str(contact_id), data=json_data, verify=False, auth=("jebqsdFMddjuwZpgFrRo", ""))
+    if r.status_code != requests.codes.ok:
+        print r.text
 
 
 @app.task
