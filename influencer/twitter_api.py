@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 from requests.auth import HTTPProxyAuth
 import requests
 import zlib
-import twitter
 
 SONET_TWTR_CONSUMER_KEY = os.getenv('NEWSAI_SONET_TWTR_CONSUMER_KEY', '')
 SONET_TWTR_CONSUMER_SECRET = os.getenv('NEWSAI_SONET_TWTR_CONSUMER_SECRET', '')
@@ -25,6 +24,7 @@ class TwitterParser(object):
         self.depth = depth
         self.info = {}
 
+        # Setting the username of the twitter user
         self.username = ''
         username_split = link.split('/')[-1]
         if username_split[-1] == '/':
@@ -32,6 +32,7 @@ class TwitterParser(object):
         else:
             self.username = link.split('/')[-1]
 
+        import twitter
         self.api = twitter.Api(consumer_key=SONET_TWTR_CONSUMER_KEY,
                                consumer_secret=SONET_TWTR_CONSUMER_SECRET,
                                access_token_key=SONET_TWTR_ACCESS_TOKEN,
@@ -47,20 +48,10 @@ class TwitterParser(object):
         # self.get_info()
         self.get_twitter_api_data()
 
-    def load_page(self, url, data=None):
-        """
-        Utility function to load HTML from URLs for us with hack to continue despite 404
-        """
-
-        r = requests.get(url, proxies=self.proxies, auth=self.proxy_auth,
-                         verify='./crawlera-ca.crt')
-
-        return r.text
-
     def get_twitter_api_data(self):
         exclude = set(string.punctuation)
 
-        data = api.GetUser(screen_name=self.username)
+        data = self.api.GetUser(screen_name=self.username)
         name = data.name
         description = data.description
         url = data.url
@@ -74,7 +65,7 @@ class TwitterParser(object):
 
         connection_twitter = []
         for connection in connections:
-            connection_data = api.GetUser(screen_name=connection)
+            connection_data = self.api.GetUser(screen_name=connection)
             information = {
                 'name': connection_data.name,
                 'url': connection_data.url,
@@ -82,9 +73,28 @@ class TwitterParser(object):
             }
             connection_twitter.append(information)
 
-        print connection_twitter
+        self.info = {
+            'user': {
+                'name': name,
+                'description': description,
+                'url': url
+            },
+            'employers': connection_twitter
+        }
 
-    def get_info(self):
+        return self.info
+
+    def load_page(self, url, data=None):
+        """
+        Utility function to load HTML from URLs for us with hack to continue despite 404
+        """
+
+        r = requests.get(url, proxies=self.proxies, auth=self.proxy_auth,
+                         verify='./crawlera-ca.crt')
+
+        return r.text
+
+    def get_info_from_scraping(self):
         # gets all info = current jobs, previous jobs
         html = self.load_page(self.link)
         soup = BeautifulSoup(html, 'html.parser')
