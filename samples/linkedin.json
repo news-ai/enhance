@@ -1,1 +1,32 @@
-{'current': [], 'past': [{'date': u'May 2015 \u2013 July 2015 (3 months)', 'position': u'Software Engineering Intern', 'employer': u'BuzzFeed'}, {'date': u'May 2015 \u2013 July 2015 (3 months)', 'position': u'HackNY Fellow', 'employer': u'hackNY'}, {'date': u'January 2014 \u2013 June 2014 (6 months)', 'position': u'Software Developer', 'employer': u'NYU Residential and Housing Department'}, {'date': u'July 2009 \u2013 March 2012 (2 years 9 months)', 'position': u'Software Developer', 'employer': u'BPS Software Development'}, {'date': u'July 2011 \u2013 August 2011 (2 months)', 'position': u'Software Developer', 'employer': u'Aptech Computer Education'}, {'date': u'January 2011 \u2013 August 2011 (8 months)', 'position': u'Software Developer', 'employer': u'Med'}, {'date': u'January 2005 \u2013 March 2009 (4 years 3 months)', 'position': u'Founder & CEO', 'employer': u'Habless'}]}
+{
+    'current': [],
+    'past': [{
+        'date': u 'May 2015 \u2013 July 2015 (3 months)',
+        'position': u 'Software Engineering Intern',
+        'employer': u 'BuzzFeed'
+    }, {
+        'date': u 'May 2015 \u2013 July 2015 (3 months)',
+        'position': u 'HackNY Fellow',
+        'employer': u 'hackNY'
+    }, {
+        'date': u 'January 2014 \u2013 June 2014 (6 months)',
+        'position': u 'Software Developer',
+        'employer': u 'NYU Residential and Housing Department'
+    }, {
+        'date': u 'July 2009 \u2013 March 2012 (2 years 9 months)',
+        'position': u 'Software Developer',
+        'employer': u 'BPS Software Development'
+    }, {
+        'date': u 'July 2011 \u2013 August 2011 (2 months)',
+        'position': u 'Software Developer',
+        'employer': u 'Aptech Computer Education'
+    }, {
+        'date': u 'January 2011 \u2013 August 2011 (8 months)',
+        'position': u 'Software Developer',
+        'employer': u 'Med'
+    }, {
+        'date': u 'January 2005 \u2013 March 2009 (4 years 3 months)',
+        'position': u 'Founder & CEO',
+        'employer': u 'Habless'
+    }]
+}

@@ -53,6 +53,7 @@ class LinkedInParser(object):
                 job['position'] = i.find(class_="item-title").text
                 job['employer'] = i.find(class_="item-subtitle").text
                 job['date'] = i.find(class_="date-range").text
+                job['url'] = ''
                 current_jobs.append(job)
 
         self.info['current'] = current_jobs
@@ -65,6 +66,7 @@ class LinkedInParser(object):
                 job['position'] = i.find(class_="item-title").text
                 job['employer'] = i.find(class_="item-subtitle").text
                 job['date'] = i.find(class_="date-range").text
+                job['url'] = ''
                 past_employers.append(job)
 
         self.info['past'] = past_employers

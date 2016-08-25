@@ -67,7 +67,7 @@ class TwitterParser(object):
         for connection in connections:
             connection_data = self.api.GetUser(screen_name=connection)
             information = {
-                'name': connection_data.name,
+                'employer': connection_data.name,
                 'url': connection_data.url,
                 'description': connection_data.description,
             }
@@ -79,7 +79,7 @@ class TwitterParser(object):
                 'description': description,
                 'url': url
             },
-            'employers': connection_twitter
+            'current': connection_twitter
         }
 
         return self.info
