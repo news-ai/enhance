@@ -5,6 +5,7 @@ import string
 # Third-party app imports
 from bs4 import BeautifulSoup
 from requests.auth import HTTPProxyAuth
+import urllib2
 import requests
 import zlib
 
@@ -15,6 +16,18 @@ class LinkedInParser(object):
         """ Start up... """
         self.link = link
         self.info = {}
+
+        self.opener = urllib2.build_opener(
+            urllib2.HTTPRedirectHandler(),
+            urllib2.HTTPHandler(debuglevel=0),
+            urllib2.HTTPSHandler(debuglevel=0),
+        )
+        self.opener.addheaders = [
+            ('User-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'),
+            ('Accept-Language', 'en-US,en;q=0.8'),
+            ('Accept', 'text/html'),
+            ('Upgrade-Insecure-Requests', '1'),
+        ]
 
         self.proxy_host = "proxy.crawlera.com"
         self.proxy_port = "8010"
@@ -33,6 +46,10 @@ class LinkedInParser(object):
         r = requests.get(url, proxies=self.proxies, auth=self.proxy_auth,
                          verify='./crawlera-ca.crt')
 
+        if r.status_code == 523:
+            print 'Alternative'
+            response = self.opener.open(url)
+            return ''.join(response.readlines())
         return r.text
 
     def get_info(self):

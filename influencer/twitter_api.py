@@ -79,7 +79,8 @@ class TwitterParser(object):
                 'description': description,
                 'url': url
             },
-            'current': connection_twitter
+            'current': connection_twitter,
+            'past': []
         }
 
         return self.info

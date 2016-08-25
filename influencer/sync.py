@@ -9,6 +9,7 @@ import requests
 
 # Imports from app
 from influencer.linkedin import LinkedInParser
+from influencer.twitter_api import TwitterParser
 from taskrunner import app
 
 client = datastore.Client('newsai-1166')
@@ -45,7 +46,7 @@ def find_or_create_publisher(publisher_name, publication_url):
     return new_publication.key.id
 
 
-def update_datastore(data, contact_id):
+def update_datastore(data, contact_id, is_linkedin):
     key = client.key('Contact', int(contact_id))
     result = client.get(key)
 
@@ -53,24 +54,43 @@ def update_datastore(data, contact_id):
     post_data['employers'] = []
     post_data['pastemployers'] = []
 
-    if data['Employers']:
-        post_data['employers'] = data['Employers']
+    past_employers = {}
+
+    if not is_linkedin:
+        if 'Employers' in result:
+            post_data['employers'] = result['Employers']
+        if 'PastEmployers' in result:
+            post_data['pastemployers'] = result['PastEmployers']
 
     # Current jobs
     if data['current']:
         for job in data['current']:
             employer_id = find_or_create_publisher(job['employer'], job['url'])
             post_data['employers'].append(employer_id)
-        post_data['employers'] = [item for item, count in collections.Counter(
-            post_data['employers']).items() if count is 1]
 
     # Past jobs
     if data['past']:
         for job in data['past']:
             employer_id = find_or_create_publisher(job['employer'], job['url'])
             post_data['pastemployers'].append(employer_id)
+
+    # Small data cleanup
+    if len(post_data['employers']) > 0:
+        post_data['employers'] = [item for item, count in collections.Counter(
+            post_data['employers']).items() if count >= 1]
+    if len(post_data['pastemployers']) > 0:
         post_data['pastemployers'] = [item for item, count in collections.Counter(
-            post_data['pastemployers']).items() if count is 1]
+            post_data['pastemployers']).items() if count >= 1]
+
+        for pastemployer in post_data['pastemployers']:
+            past_employers[str(pastemployer)] = True
+
+    # If they have more than one main job remove jobs that exist both in past
+    # employers and employers.
+    if len(post_data['employers']) > 1:
+        for index, employee in enumerate(post_data['employers']):
+            if str(employee) in past_employers:
+                del post_data['employers'][index]
 
     # Post data
     json_data = json.dumps(post_data)
@@ -107,7 +127,7 @@ def twitter_sync(twitter_url, contact_id, just_created):
         return False
 
     # Data loaded from Linkedin
-    update_datastore(twitter_data, contact_id)
+    update_datastore(twitter_data, contact_id, False)
     return True
 
 
@@ -138,5 +158,5 @@ def linkedin_sync(linkedin_url, contact_id, just_created):
         return False
 
     # Data loaded from Linkedin
-    update_datastore(linkedin_data, contact_id)
+    update_datastore(linkedin_data, contact_id, True)
     return True
