@@ -12,10 +12,11 @@ import zlib
 
 class LinkedInParser(object):
 
-    def __init__(self, link):
+    def __init__(self, link, access_token=''):
         """ Start up... """
         self.link = link
         self.info = {}
+        self.access_token = access_token
 
         self.opener = urllib2.build_opener(
             urllib2.HTTPRedirectHandler(),
@@ -36,7 +37,14 @@ class LinkedInParser(object):
         self.proxies = {
             "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
-        self.get_info()
+        # self.get_info()
+
+    def get_from_linkedin_api(self):
+        profile_url = self.link
+        url = 'https://api.linkedin.com/v1/people/?url=' + profile_url + '&oauth2_access_token=' + \
+            self.access_token + '&format=json'
+        r = requests.get(url)
+        print r.text
 
     def load_page(self, url, data=None):
         """
