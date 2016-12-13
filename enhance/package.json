@@ -1,0 +1,22 @@
+{
+  "name": "fullcontact-sync",
+  "version": "0.0.1",
+  "description": "Fullcontact API sync",
+  "main": "fullcontact.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "NewsAI",
+  "license": "ISC",
+  "dependencies": {
+    "fullcontact": "^1.0.0",
+    "@google-cloud/datastore": "^0.1.1",
+    "elasticsearch": "^12.1.0",
+    "google-cloud": "^0.40.0",
+    "moment": "^2.15.0",
+    "q": "^1.4.1",
+    "raven": "^0.12.1",
+    "request": "^2.75.0",
+    "request-promise": "^4.1.1"
+  }
+}

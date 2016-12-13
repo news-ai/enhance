@@ -37,7 +37,7 @@ class LinkedInParser(object):
         self.proxies = {
             "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
-        # self.get_info()
+        self.get_info()
 
     def get_from_linkedin_api(self):
         profile_url = self.link
