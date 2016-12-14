@@ -47,7 +47,7 @@ function searchEmailInES(email) {
         index: 'database',
         type: 'contacts',
         id: email
-    }, function (error, response) {
+    }, function(error, response) {
         if (error) {
             sentryClient.captureMessage(error);
             deferred.reject(error);
@@ -94,21 +94,21 @@ function addEmailToES(email, fullContactData) {
 function enhanceContact(data) {
     var deferred = Q.defer();
 
-    searchEmailInES(data.email).then(function (returnData) {
+    searchEmailInES(data.email).then(function(returnData) {
         // If email is in ES already then we resolve it
         deferred.resolve(true);
-    }, function (err) {
+    }, function(err) {
         // If email is not in ES then we look it up
-        fullcontact.person.email(data.email, function (err, returnData) {
+        fullcontact.person.email(data.email, function(err, returnData) {
             if (err) {
                 // If FullContact has no data on the email
                 sentryClient.captureMessage(err);
                 deferred.reject(err);
             } else {
                 // If FullContact has data on the email then we add it to ES
-                addEmailToES(data.email, returnData).then(function (status) {
+                addEmailToES(data.email, returnData).then(function(status) {
                     deferred.resolve(true);
-                }, function (error) {
+                }, function(error) {
                     sentryClient.captureMessage(error);
                     deferred.reject(error);
                 })
