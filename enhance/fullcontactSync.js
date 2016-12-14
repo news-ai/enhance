@@ -40,18 +40,80 @@ function getTopic(cb) {
     });
 }
 
+function searchEmailInES(email) {
+    var deferred = Q.defer();
+
+    client.get({
+        index: 'database',
+        type: 'contacts',
+        id: email
+    }, function (error, response) {
+        if (error) {
+            sentryClient.captureMessage(error);
+            deferred.reject(error);
+        } else {
+            deferred.resolve(response);
+        }
+    });
+
+    return deferred.promise;
+}
+
+function addEmailToES(email, fullContactData) {
+    var deferred = Q.defer();
+
+    var esActions = [];
+    var indexRecord = {
+        index: {
+            _index: 'database',
+            _type: 'contacts',
+            _id: email
+        }
+    };
+    var dataRecord = fullContactData;
+
+    esActions.push(indexRecord);
+    esActions.push({
+        data: dataRecord
+    });
+
+    client.bulk({
+        body: esActions
+    }, function(error, response) {
+        if (error) {
+            console.error(error);
+            sentryClient.captureMessage(error);
+            deferred.resolve(false);
+        }
+        deferred.resolve(true);
+    });
+
+    return deferred.promise;
+}
+
 function enhanceContact(data) {
     var deferred = Q.defer();
 
-    fullcontact.person.email(data.email, function (err, returnData) {
-        if (err) {
-            console.error(err);
-            sentryClient.captureMessage(err);
-            deferred.resolve(err);
-            return;
-        } else {
-
-        }
+    searchEmailInES(data.email).then(function (returnData) {
+        // If email is in ES already then we resolve it
+        deferred.resolve(true);
+    }, function (err) {
+        // If email is not in ES then we look it up
+        fullcontact.person.email(data.email, function (err, returnData) {
+            if (err) {
+                // If FullContact has no data on the email
+                sentryClient.captureMessage(err);
+                deferred.reject(err);
+            } else {
+                // If FullContact has data on the email then we add it to ES
+                addEmailToES(data.email, returnData).then(function (status) {
+                    deferred.resolve(true);
+                }, function (error) {
+                    sentryClient.captureMessage(error);
+                    deferred.reject(error);
+                })
+            }
+        });
     });
 
     return deferred.promise;
@@ -129,22 +191,22 @@ subscribe(function(err, message) {
         });
 });
 
-var message = {
-    data: {
-        'email': 'me@abhiagarwal.com'
-    }
-}
+// var message = {
+//     data: {
+//         'email': 'vicki@brooklinen.com'
+//     }
+// }
 
-enhanceContact(message.data)
-    .then(function(status) {
-        rp('https://hchk.io/fadd27af-0555-433d-8b5c-09c544ac1c16')
-            .then(function (htmlString) {
-                console.log('Completed execution for ' + message.data.email);
-            })
-            .catch(function (err) {
-                console.error(err);
-            });
-    }, function(error) {
-        console.error(error);
-        sentryClient.captureMessage(error);
-    });
+// enhanceContact(message.data)
+//     .then(function(status) {
+//         rp('https://hchk.io/fadd27af-0555-433d-8b5c-09c544ac1c16')
+//             .then(function (htmlString) {
+//                 console.log('Completed execution for ' + message.data.email);
+//             })
+//             .catch(function (err) {
+//                 console.error(err);
+//             });
+//     }, function(error) {
+//         console.error(error);
+//         sentryClient.captureMessage(error);
+//     });
