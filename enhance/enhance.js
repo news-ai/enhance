@@ -90,23 +90,38 @@ app.get('/fullcontactCallback', function(req, res) {
 
 app.get('/fullcontact/:email', function(req, res) {
     var email = req.params.email;
+    email = email.toLowerCase();
 
     if (email !== '') {
         searchEmailInES(email).then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(returnData));
+            res.send(JSON.stringify(returnData._source.data));
         }, function(err) {
             // If email is not in ES then we look it up
             fullcontact.person.email(email, function(err, returnData) {
+                if (err) {
+                    // If FullContact has no data on the email
+                    console.error(err);
+                    sentryClient.captureMessage(err);
+                    res.send(err);
+                    return
+                }
+
                 if (returnData.status === 200) {
-                    addEmailToES(data.email, returnData).then(function(status) {
+                    addEmailToES(email, returnData).then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify(returnData));
+                        return
                     }, function(error) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify(error));
+                        return
                     });
+                } else {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify(returnData));
+                    return
                 }
             });
         });
