@@ -106,12 +106,16 @@ function enhanceContact(data) {
                 deferred.reject(err);
             } else {
                 // If FullContact has data on the email then we add it to ES
-                addEmailToES(data.email, returnData).then(function(status) {
+                if (returnData.status === 200) {
+                    addEmailToES(data.email, returnData).then(function(status) {
+                        deferred.resolve(true);
+                    }, function(error) {
+                        sentryClient.captureMessage(error);
+                        deferred.reject(error);
+                    });
+                } else {
                     deferred.resolve(true);
-                }, function(error) {
-                    sentryClient.captureMessage(error);
-                    deferred.reject(error);
-                })
+                }
             }
         });
     });
