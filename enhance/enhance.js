@@ -96,7 +96,7 @@ app.get('/fullcontact/:email', function(req, res) {
         searchEmailInES(email).then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(returnData._source.data));
+            res.send(JSON.stringify(returnData._source));
         }, function(err) {
             // If email is not in ES then we look it up
             fullcontact.person.email(email, function(err, returnData) {
