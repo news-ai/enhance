@@ -135,7 +135,33 @@ function addEmailToES(email, fullContactData) {
     return deferred.promise;
 }
 
-app.get('/fullcontactCallback', function(req, res) {
+app.post('/fullcontactCallback', function(req, res) {
+    var data = req.body;
+    var email = data.email;
+
+    searchEmailInES(email).then(function(returnData) {
+        // If email is in ES already then we resolve it
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(returnData._source));
+    }, function(err) {
+        if (returnData.status === 200) {
+            addEmailToES(email, data).then(function(status) {
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({data: data}));
+                return
+            }, function(error) {
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({data: error}));
+                return
+            });
+        } else {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({data: data}));
+            return
+        }
+    });
+
+
     res.send('No ID present.');
 });
 
