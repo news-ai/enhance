@@ -102,25 +102,25 @@ app.get('/fullcontact/:email', function(req, res) {
             fullcontact.person.email(email, function(err, returnData) {
                 if (err) {
                     // If FullContact has no data on the email
-                    console.error(err);
                     sentryClient.captureMessage(err);
-                    res.send(err);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({data: err}));
                     return
                 }
 
                 if (returnData.status === 200) {
                     addEmailToES(email, returnData).then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
-                        res.send(JSON.stringify(returnData));
+                        res.send(JSON.stringify({data: returnData}));
                         return
                     }, function(error) {
                         res.setHeader('Content-Type', 'application/json');
-                        res.send(JSON.stringify(error));
+                        res.send(JSON.stringify({data: error}));
                         return
                     });
                 } else {
                     res.setHeader('Content-Type', 'application/json');
-                    res.send(JSON.stringify(returnData));
+                    res.send(JSON.stringify({data: returnData}));
                     return
                 }
             });
