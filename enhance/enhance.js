@@ -143,26 +143,24 @@ app.post('/fullcontactCallback', function(req, res) {
         // If email is in ES already then we resolve it
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(returnData._source));
+        return;
     }, function(err) {
         if (returnData.status === 200) {
             addEmailToES(email, data).then(function(status) {
                 res.setHeader('Content-Type', 'application/json');
                 res.send(JSON.stringify({data: data}));
-                return
+                return;
             }, function(error) {
                 res.setHeader('Content-Type', 'application/json');
                 res.send(JSON.stringify({data: error}));
-                return
+                return;
             });
         } else {
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify({data: data}));
-            return
+            return;
         }
     });
-
-
-    res.send('No ID present.');
 });
 
 app.get('/company/:url', function(req, res) {
@@ -174,6 +172,7 @@ app.get('/company/:url', function(req, res) {
             // If url is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
+            return;
         }, function(err) {
             // If url is not in ES then we look it up
             fullcontact.company.domain(url, function(err, returnData) {
@@ -182,23 +181,23 @@ app.get('/company/:url', function(req, res) {
                     sentryClient.captureMessage(err);
                     res.setHeader('Content-Type', 'application/json');
                     res.send(JSON.stringify({data: err}));
-                    return
+                    return;
                 }
 
                 if (returnData.status === 200) {
                     addCompanyToES(url, returnData).then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({data: returnData}));
-                        return
+                        return;
                     }, function(error) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({data: error}));
-                        return
+                        return;
                     });
                 } else {
                     res.setHeader('Content-Type', 'application/json');
                     res.send(JSON.stringify({data: returnData}));
-                    return
+                    return;
                 }
             });
         });
@@ -217,6 +216,7 @@ app.get('/fullcontact/:email', function(req, res) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
+            return;
         }, function(err) {
             // If email is not in ES then we look it up
             fullcontact.person.email(email, function(err, returnData) {
@@ -225,23 +225,23 @@ app.get('/fullcontact/:email', function(req, res) {
                     sentryClient.captureMessage(err);
                     res.setHeader('Content-Type', 'application/json');
                     res.send(JSON.stringify({data: err}));
-                    return
+                    return;
                 }
 
                 if (returnData.status === 200) {
                     addEmailToES(email, returnData).then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({data: returnData}));
-                        return
+                        return;
                     }, function(error) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({data: error}));
-                        return
+                        return;
                     });
                 } else {
                     res.setHeader('Content-Type', 'application/json');
                     res.send(JSON.stringify({data: returnData}));
-                    return
+                    return;
                 }
             });
         });
