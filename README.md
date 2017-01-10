@@ -6,4 +6,6 @@ Enhance influencer or contact information.
 
 Run celery: `celery worker -A taskrunner --beat -l info -c 5`
 
-### Fullcontact
+### Google Cloud
+
+`gcloud compute --project "newsai-1166" ssh --zone "us-east1-c" "enhance-1"`

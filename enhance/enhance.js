@@ -33,6 +33,57 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
+function searchCompanyInES(company) {
+    var deferred = Q.defer();
+
+    client.get({
+        index: 'database',
+        type: 'companies',
+        id: company
+    }, function(error, response) {
+        if (error) {
+            sentryClient.captureMessage(error);
+            deferred.reject(error);
+        } else {
+            deferred.resolve(response);
+        }
+    });
+
+    return deferred.promise;
+}
+
+function addCompanyToES(company, fullContactData) {
+    var deferred = Q.defer();
+
+    var esActions = [];
+    var indexRecord = {
+        index: {
+            _index: 'database',
+            _type: 'companies',
+            _id: company
+        }
+    };
+    var dataRecord = fullContactData;
+
+    esActions.push(indexRecord);
+    esActions.push({
+        data: dataRecord
+    });
+
+    client.bulk({
+        body: esActions
+    }, function(error, response) {
+        if (error) {
+            console.error(error);
+            sentryClient.captureMessage(error);
+            deferred.resolve(false);
+        }
+        deferred.resolve(true);
+    });
+
+    return deferred.promise;
+}
+
 function searchEmailInES(email) {
     var deferred = Q.defer();
 
@@ -86,6 +137,49 @@ function addEmailToES(email, fullContactData) {
 
 app.get('/fullcontactCallback', function(req, res) {
     res.send('No ID present.');
+});
+
+app.get('/company/:url', function(req, res) {
+    var url = req.params.url;
+    url = url.toLowerCase();
+
+    if (url !== '') {
+        searchCompanyInES(url).then(function(returnData) {
+            // If url is in ES already then we resolve it
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(returnData._source));
+        }, function(err) {
+            // If url is not in ES then we look it up
+            fullcontact.company.domain(url, function(err, returnData) {
+                if (err) {
+                    // If FullContact has no data on the url
+                    sentryClient.captureMessage(err);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({data: err}));
+                    return
+                }
+
+                if (returnData.status === 200) {
+                    addCompanyToES(url, returnData).then(function(status) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.send(JSON.stringify({data: returnData}));
+                        return
+                    }, function(error) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.send(JSON.stringify({data: error}));
+                        return
+                    });
+                } else {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({data: returnData}));
+                    return
+                }
+            });
+        });
+    } else {
+        res.send('Missing email');
+        return;
+    }
 });
 
 app.get('/fullcontact/:email', function(req, res) {
