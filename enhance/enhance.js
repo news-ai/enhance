@@ -251,6 +251,22 @@ app.get('/fullcontact/:email', function(req, res) {
     }
 });
 
+app.get('/location/:location', function(req, res) {
+    var location = req.params.location;
+    location = location.toLowerCase();
+
+    if (location !== '') {
+        fullcontact.location.normalize(location, function (err, data) {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({data: data}));
+            return;
+        });
+    } else {
+        res.send('Missing location');
+        return;
+    }
+});
+
 app.listen(8080, function() {
     console.log('Enhance app listening on port 8080!');
 });
