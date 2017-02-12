@@ -91,15 +91,15 @@ function addEmailToES(email, fullContactData) {
     return deferred.promise;
 }
 
-function enhanceContact(data) {
+function enhanceContact(email) {
     var deferred = Q.defer();
 
-    searchEmailInES(data.email).then(function(returnData) {
+    searchEmailInES(email).then(function(returnData) {
         // If email is in ES already then we resolve it
         deferred.resolve(true);
     }, function(err) {
         // If email is not in ES then we look it up
-        fullcontact.person.email(data.email, function(err, returnData) {
+        fullcontact.person.email(email, function(err, returnData) {
             if (err) {
                 // If FullContact has no data on the email
                 sentryClient.captureMessage(err);
@@ -107,7 +107,7 @@ function enhanceContact(data) {
             } else {
                 // If FullContact has data on the email then we add it to ES
                 if (returnData.status === 200) {
-                    addEmailToES(data.email, returnData).then(function(status) {
+                    addEmailToES(email, returnData).then(function(status) {
                         deferred.resolve(true);
                     }, function(error) {
                         sentryClient.captureMessage(error);
@@ -121,6 +121,19 @@ function enhanceContact(data) {
     });
 
     return deferred.promise;
+}
+
+function enhanceContacts(data) {
+    var deferred = Q.defer();
+    var allPromises = [];
+
+    var emails = data.email.split(',');
+    for (var i = 0; i < emails.length; i++) {
+        var toExecute = enhanceContact(emails[i]);
+        allPromises.push(toExecute);
+    }
+
+    return Q.all(allPromises);
 }
 
 function subscribe(cb) {
@@ -180,7 +193,7 @@ subscribe(function(err, message) {
         throw err;
     }
     console.log('Received request to enhance email ' + message.data.email);
-    enhanceContact(message.data)
+    enhanceContacts(message.data)
         .then(function(status) {
             rp('https://hchk.io/fadd27af-0555-433d-8b5c-09c544ac1c16')
                 .then(function(htmlString) {
@@ -197,11 +210,11 @@ subscribe(function(err, message) {
 
 // var message = {
 //     data: {
-//         'email': 'vicki@brooklinen.com'
+//         'email': 'vicki@brooklinen.com,me@abhiagarwal.com'
 //     }
 // }
 
-// enhanceContact(message.data)
+// enhanceContacts(message.data)
 //     .then(function(status) {
 //         rp('https://hchk.io/fadd27af-0555-433d-8b5c-09c544ac1c16')
 //             .then(function (htmlString) {

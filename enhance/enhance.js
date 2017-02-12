@@ -10,7 +10,7 @@ var gcloud = require('google-cloud')({
     projectId: 'newsai-1166'
 });
 var express = require('express');
-var bodyParser = require('body-parser')
+var bodyParser = require('body-parser');
 
 // Instantiate a elasticsearch client
 var client = new elasticsearch.Client({
