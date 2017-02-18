@@ -84,12 +84,12 @@ function addCompanyToES(company, fullContactData) {
     return deferred.promise;
 }
 
-function searchEmailInES(email) {
+function searchEmailInES(email, typeName) {
     var deferred = Q.defer();
 
     client.get({
         index: 'database',
-        type: 'contacts',
+        type: typeName,
         id: email
     }, function(error, response) {
         if (error) {
@@ -103,14 +103,14 @@ function searchEmailInES(email) {
     return deferred.promise;
 }
 
-function addEmailToES(email, fullContactData) {
+function addEmailToES(email, fullContactData, typeName) {
     var deferred = Q.defer();
 
     var esActions = [];
     var indexRecord = {
         index: {
             _index: 'database',
-            _type: 'contacts',
+            _type: typeName,
             _id: email
         }
     };
@@ -139,25 +139,31 @@ app.post('/fullcontactCallback', function(req, res) {
     var data = req.body;
     var email = data.email;
 
-    searchEmailInES(email).then(function(returnData) {
+    searchEmailInES(email, 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(returnData._source));
         return;
     }, function(err) {
         if (returnData.status === 200) {
-            addEmailToES(email, data).then(function(status) {
+            addEmailToES(email, data, 'contacts').then(function(status) {
                 res.setHeader('Content-Type', 'application/json');
-                res.send(JSON.stringify({data: data}));
+                res.send(JSON.stringify({
+                    data: data
+                }));
                 return;
             }, function(error) {
                 res.setHeader('Content-Type', 'application/json');
-                res.send(JSON.stringify({data: error}));
+                res.send(JSON.stringify({
+                    data: error
+                }));
                 return;
             });
         } else {
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({data: data}));
+            res.send(JSON.stringify({
+                data: data
+            }));
             return;
         }
     });
@@ -180,23 +186,31 @@ app.get('/company/:url', function(req, res) {
                     // If FullContact has no data on the url
                     sentryClient.captureMessage(err);
                     res.setHeader('Content-Type', 'application/json');
-                    res.send(JSON.stringify({data: err}));
+                    res.send(JSON.stringify({
+                        data: err
+                    }));
                     return;
                 }
 
                 if (returnData.status === 200) {
                     addCompanyToES(url, returnData).then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
-                        res.send(JSON.stringify({data: returnData}));
+                        res.send(JSON.stringify({
+                            data: returnData
+                        }));
                         return;
                     }, function(error) {
                         res.setHeader('Content-Type', 'application/json');
-                        res.send(JSON.stringify({data: error}));
+                        res.send(JSON.stringify({
+                            data: error
+                        }));
                         return;
                     });
                 } else {
                     res.setHeader('Content-Type', 'application/json');
-                    res.send(JSON.stringify({data: returnData}));
+                    res.send(JSON.stringify({
+                        data: returnData
+                    }));
                     return;
                 }
             });
@@ -212,7 +226,7 @@ app.get('/fullcontact/:email', function(req, res) {
     email = email.toLowerCase();
 
     if (email !== '') {
-        searchEmailInES(email).then(function(returnData) {
+        searchEmailInES(email, 'contacts').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -224,23 +238,31 @@ app.get('/fullcontact/:email', function(req, res) {
                     // If FullContact has no data on the email
                     sentryClient.captureMessage(err);
                     res.setHeader('Content-Type', 'application/json');
-                    res.send(JSON.stringify({data: err}));
+                    res.send(JSON.stringify({
+                        data: err
+                    }));
                     return;
                 }
 
                 if (returnData.status === 200) {
-                    addEmailToES(email, returnData).then(function(status) {
+                    addEmailToES(email, returnData, 'contacts').then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
-                        res.send(JSON.stringify({data: returnData}));
+                        res.send(JSON.stringify({
+                            data: returnData
+                        }));
                         return;
                     }, function(error) {
                         res.setHeader('Content-Type', 'application/json');
-                        res.send(JSON.stringify({data: error}));
+                        res.send(JSON.stringify({
+                            data: error
+                        }));
                         return;
                     });
                 } else {
                     res.setHeader('Content-Type', 'application/json');
-                    res.send(JSON.stringify({data: returnData}));
+                    res.send(JSON.stringify({
+                        data: returnData
+                    }));
                     return;
                 }
             });
@@ -251,14 +273,69 @@ app.get('/fullcontact/:email', function(req, res) {
     }
 });
 
+app.post('/twitter/:email', function(req, res) {
+    var data = req.body;
+    var email = data.email;
+    var twitterUser = data.twitterUser;
+
+    if (email !== '' || twitterUser !== '') {
+        searchEmailInES(email, 'twitters').then(function(returnData) {
+            // If email is in ES already then we resolve it
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(returnData._source));
+            return;
+        }, function(err) {
+            // If email is not in ES then we look it up
+            fullcontact.person.twitter(twitterUser, function(err, returnData) {
+                if (err) {
+                    // If FullContact has no data on the email
+                    sentryClient.captureMessage(err);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: err
+                    }));
+                    return;
+                }
+
+                if (returnData.status === 200) {
+                    addEmailToES(email, returnData, 'twitters').then(function(status) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.send(JSON.stringify({
+                            data: returnData
+                        }));
+                        return;
+                    }, function(error) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.send(JSON.stringify({
+                            data: error
+                        }));
+                        return;
+                    });
+                } else {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: returnData
+                    }));
+                    return;
+                }
+            });
+        });
+    } else {
+        res.send('Missing email or twitter username');
+        return;
+    }
+});
+
 app.get('/location/:location', function(req, res) {
     var location = req.params.location;
     location = location.toLowerCase();
 
     if (location !== '') {
-        fullcontact.location.normalize(location, function (err, data) {
+        fullcontact.location.normalize(location, function(err, data) {
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({data: data}));
+            res.send(JSON.stringify({
+                data: data
+            }));
             return;
         });
     } else {

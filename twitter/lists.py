@@ -54,5 +54,5 @@ def get_list_members(list_id, owner_screen_name, domain_extension):
 def get_lists_by_user_name(screen_name):
     print api.GetLists(screen_name=screen_name)
 
-# get_lists_by_user_name('washingtonpost')
-get_list_members(48978707, 'washingtonpost', '@washpost.com')
+# get_lists_by_user_name('usatoday')
+get_list_members(1599986, 'usatoday', '@usatoday.com')
