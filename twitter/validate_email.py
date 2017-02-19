@@ -20,6 +20,7 @@ def check_email(address_to_verify):
         # Get domain for DNS lookup
         splitAddress = address_to_verify.split('@')
         domain = str(splitAddress[1])
+        print('Domain:', domain)
 
         # MX record lookup
         try:
