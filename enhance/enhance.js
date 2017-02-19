@@ -273,10 +273,11 @@ app.get('/fullcontact/:email', function(req, res) {
     }
 });
 
-app.post('/twitter/:email', function(req, res) {
-    var data = req.body;
-    var email = data.email;
-    var twitterUser = data.twitterUser;
+app.get('/twitter/:email/:twitteruser', function(req, res) {
+    var twitterUser = req.params.twitteruser;
+    var email = req.params.email;
+    twitterUser = twitterUser.toLowerCase();
+    email = email.toLowerCase();
 
     if (email !== '' || twitterUser !== '') {
         searchEmailInES(email, 'twitters').then(function(returnData) {
