@@ -16,6 +16,14 @@ def process_email_on_enhance(email):
     return enhance_response['data']['status']
 
 
+def process_twitter_on_enhance(email, twitter_username):
+    r = requests.get('http://enhance.newsai.org/twitter/' +
+                     email + '/' + twitter_username,
+                     auth=('newsai', 'XkJRNRx2EGCd6'), verify=False)
+    enhance_response = r.json()
+    return enhance_response['data']['status']
+
+
 def find_email_for_name(full_name, domain_extension):
     full_name_array = full_name.split(' ')
     first_name = full_name_array[0].lower()
@@ -49,7 +57,10 @@ def get_list_members(list_id, owner_screen_name, domain_extension):
         valid_email = find_email_for_name(list_member.name, domain_extension)
         print valid_email, list_member.screen_name
         if valid_email != '':
-            print process_email_on_enhance(valid_email)
+            processed = process_email_on_enhance(valid_email)
+            if processed == 404:
+                print process_twitter_on_enhance(
+                    valid_email, list_member.screen_name)
 
 
 def get_lists_by_user_name(screen_name):
