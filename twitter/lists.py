@@ -13,6 +13,7 @@ def process_email_on_enhance(email):
     r = requests.get('http://enhance.newsai.org/fullcontact/' +
                      email, auth=('newsai', 'XkJRNRx2EGCd6'), verify=False)
     print r.status_code
+    print r.json()
 
 
 def find_email_for_name(full_name, domain_extension):
@@ -46,7 +47,7 @@ def get_list_members(list_id, owner_screen_name, domain_extension):
         list_id=list_id, owner_screen_name=owner_screen_name)
     for list_member in list_members:
         valid_email = find_email_for_name(list_member.name, domain_extension)
-        print valid_email
+        print valid_email, list_member.screen_name
         if valid_email != '':
             process_email_on_enhance(valid_email)
 
@@ -55,4 +56,4 @@ def get_lists_by_user_name(screen_name):
     print api.GetLists(screen_name=screen_name)
 
 # get_lists_by_user_name('usatoday')
-get_list_members(1599986, 'usatoday', '@usatoday.com')
+get_list_members(54340435, 'nytimes', '@nytimes.com')
