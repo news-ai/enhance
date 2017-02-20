@@ -328,6 +328,9 @@ app.get('/twitter/:email/:twitteruser', function(req, res) {
 });
 
 app.get('/lookup/email/:email', function(req, res) {
+    var email = req.params.email;
+    email = email.toLowerCase();
+
     searchEmailInES(email, 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
         res.setHeader('Content-Type', 'application/json');
