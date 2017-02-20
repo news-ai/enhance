@@ -327,6 +327,28 @@ app.get('/twitter/:email/:twitteruser', function(req, res) {
     }
 });
 
+app.get('/lookup/email/:email', function(req, res) {
+    searchEmailInES(email, 'contacts').then(function(returnData) {
+        // If email is in ES already then we resolve it
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(returnData._source));
+        return;
+    }, function(error) {
+        searchEmailInES(email, 'twitters').then(function(returnData) {
+            // If email is in ES already then we resolve it
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(returnData._source));
+            return;
+        }, function(error) {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({
+                data: error
+            }));
+            return;
+        });
+    });
+});
+
 app.get('/location/:location', function(req, res) {
     var location = req.params.location;
     location = location.toLowerCase();
