@@ -6,6 +6,8 @@
 4. [get_list_members(48978707, 'washingtonpost', '@washingtonpost.com')](https://twitter.com/washingtonpost/lists/washington-post-people/members)
 5. [get_list_members(14556650, 'nypost', '@nypost.com')](https://twitter.com/nypost/lists/staff/members)
 6. [get_list_members(1599986, 'usatoday', '@usatoday.com')](https://twitter.com/USATODAY/lists/usa-today-staff/members)
+8. [get_list_members(88204844, 'reuters', '@reuters.com')](https://twitter.com/reuters/lists/all-journos-list-1)
+9. [get_list_members(110837831, 'CassLGarrison', '@reuters.com')](https://twitter.com/CassLGarrison/lists/reuters-journalists)
 
 ### Accounts
 
@@ -15,3 +17,4 @@
 4. `get_lists_by_user_name('washingtonpost')`
 5. `get_lists_by_user_name('nypost')`
 6. `get_lists_by_user_name('USATODAY')`
+7. `get_lists_by_user_name('reuters')`

@@ -66,5 +66,5 @@ def get_list_members(list_id, owner_screen_name, domain_extension):
 def get_lists_by_user_name(screen_name):
     print api.GetLists(screen_name=screen_name)
 
-# get_lists_by_user_name('usatoday')
-get_list_members(54340435, 'nytimes', '@nytimes.com')
+# get_lists_by_user_name('CassLGarrison')
+get_list_members(110837831, 'CassLGarrison', '@reuters.com')
