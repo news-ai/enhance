@@ -5,11 +5,13 @@ var googleSearch = new GoogleSearch({
 });
 
 googleSearch.build({
-    q: "Public Relations",
-    start: 1,
+    q: "Public Relations 1-10 employees",
+    start: 101,
     num: 10,
     siteSearch: "linkedin.com/company/"
 }, function(error, response) {
-    console.log(response);
-    // console.log(response.items[0].pagemap.person);
+    console.log(response.error.errors);
+    for (var i = 0; i < response.items.length; i++) {
+        console.log(response.items[i].formattedUrl);
+    }
 });

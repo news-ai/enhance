@@ -5,7 +5,7 @@ var googleSearch = new GoogleSearch({
 });
 
 googleSearch.build({
-    q: "https://www.linkedin.com/in/juliepan/",
+    q: "https://www.linkedin.com/in/abhimagarwal",
     start: 1,
     num: 1,
     siteSearch: "linkedin.com/in/"
