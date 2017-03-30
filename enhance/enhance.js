@@ -127,16 +127,20 @@ function addContactMetadataToES(email, organizations) {
         });
     }
 
-    client.bulk({
-        body: esActions
-    }, function(error, response) {
-        if (error) {
-            console.error(error);
-            sentryClient.captureMessage(error);
-            deferred.resolve(false);
-        }
+    if (esActions.length > 0) {
+        client.bulk({
+            body: esActions
+        }, function(error, response) {
+            if (error) {
+                console.error(error);
+                sentryClient.captureMessage(error);
+                deferred.resolve(false);
+            }
+            deferred.resolve(true);
+        });
+    } else {
         deferred.resolve(true);
-    });
+    }
 
     return deferred.promise;
 }
