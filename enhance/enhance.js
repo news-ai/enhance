@@ -78,6 +78,7 @@ function addCompanyToES(company, fullContactData) {
             sentryClient.captureMessage(error);
             deferred.resolve(false);
         }
+
         deferred.resolve(true);
     });
 
@@ -98,6 +99,43 @@ function searchEmailInES(email, typeName) {
         } else {
             deferred.resolve(response);
         }
+    });
+
+    return deferred.promise;
+}
+
+function addContactMetadataToES(email, organizations) {
+    var deferred = Q.defer();
+
+    var esActions = [];
+
+    for (var i = 0; i < organizations.length; i++) {
+        var indexRecord = {
+            index: {
+                _index: 'database',
+                _type: 'metadata1',
+                _id: organizations[i]._id
+            }
+        };
+
+        delete organizations[i]['_id']
+
+        var dataRecord = organizations[i];
+        esActions.push(indexRecord);
+        esActions.push({
+            data: dataRecord
+        });
+    }
+
+    client.bulk({
+        body: esActions
+    }, function(error, response) {
+        if (error) {
+            console.error(error);
+            sentryClient.captureMessage(error);
+            deferred.resolve(false);
+        }
+        deferred.resolve(true);
     });
 
     return deferred.promise;
@@ -133,6 +171,34 @@ function addEmailToES(email, fullContactData, typeName) {
     });
 
     return deferred.promise;
+}
+
+function addContactOrganizationsToES(email, organizations) {
+    var organizationObjects = [];
+
+    for (var i = 0; i < organizations.length; i++) {
+        if (organizations[i].name && organizations[i].name !== '') {
+            // Publication => Email
+            // Position => Email
+            var organizationNameWithoutSpecial = organizations[i].name.replace(/[^a-zA-Z ]/g, "");
+            organizationNameWithoutSpecial = organizationNameWithoutSpecial.replace(/[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u200b​\u202f\u205f​\u3000]/g,'')
+            organizationNameWithoutSpecial = organizationNameWithoutSpecial.toLowerCase();
+            organizationNameWithoutSpecial = organizationNameWithoutSpecial.split(' ').join('-');
+            var objectIndexName = email + '-' + organizationNameWithoutSpecial;
+
+            var indexObject = {
+                '_id': objectIndexName,
+                'email': email,
+                'organizationName': organizations[i].name,
+                'title': organizations[i].title || '',
+                'current': organizations[i].current || false
+            };
+
+            organizationObjects.push(indexObject);
+        }
+    }
+
+    return organizationObjects;
 }
 
 app.post('/fullcontactCallback', function(req, res) {
@@ -245,12 +311,25 @@ app.get('/fullcontact/:email', function(req, res) {
                 }
 
                 if (returnData.status === 200) {
+                    var organizations = [];
+                    if (returnData && returnData.organizations) {
+                        var organizations = addContactOrganizationsToES(email, returnData.organizations);
+                    }
                     addEmailToES(email, returnData, 'contacts').then(function(status) {
-                        res.setHeader('Content-Type', 'application/json');
-                        res.send(JSON.stringify({
-                            data: returnData
-                        }));
-                        return;
+                        addContactMetadataToES(email, organizations).then(function(status) {
+                            res.setHeader('Content-Type', 'application/json');
+                            res.send(JSON.stringify({
+                                data: returnData
+                            }));
+                            return;
+                        }, function (error) {
+                            // Return data not error. Doesn't matter if we fail to add metadata
+                            res.setHeader('Content-Type', 'application/json');
+                            res.send(JSON.stringify({
+                                data: returnData
+                            }));
+                            return;
+                        })
                     }, function(error) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({
@@ -350,6 +429,10 @@ app.get('/lookup/email/:email', function(req, res) {
             return;
         });
     });
+});
+
+app.get('/lookup/query', function(req, res) {
+
 });
 
 app.get('/location/:location', function(req, res) {
