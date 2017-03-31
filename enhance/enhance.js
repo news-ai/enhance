@@ -52,6 +52,26 @@ function searchCompanyInES(company) {
     return deferred.promise;
 }
 
+function searchEmailsForPublicationName(publicationName) {
+    var deferred = Q.defer();
+
+    client.search({
+        index: 'database',
+        type: 'metadata1',
+        q: publicationName
+    }, function(error, response) {
+        if (error) {
+            sentryClient.captureMessage(error);
+            deferred.reject(error);
+        } else {
+            console.log(response);
+            deferred.resolve(response);
+        }
+    });
+
+    return deferred.promise;
+}
+
 function addCompanyToES(company, fullContactData) {
     var deferred = Q.defer();
 
@@ -436,7 +456,17 @@ app.get('/lookup/email/:email', function(req, res) {
 });
 
 app.get('/lookup/query', function(req, res) {
-
+    searchEmailsForPublicationName('BuzzFeed').then(function(emails) {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(emails));
+        return;
+    }, function(error) {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify({
+            data: error
+        }));
+        return;
+    });
 });
 
 app.get('/location/:location', function(req, res) {
