@@ -108,110 +108,18 @@ function addCompanyToES(company, fullContactData) {
     return deferred.promise;
 }
 
-function searchEmailInES(email, typeName) {
-    var deferred = Q.defer();
-
-    client.get({
-        index: 'database',
-        type: typeName,
-        id: email
-    }, function(error, response) {
-        if (error) {
-            sentryClient.captureMessage(error);
-            deferred.reject(error);
-        } else {
-            deferred.resolve(response);
-        }
-    });
-
-    return deferred.promise;
-}
-
-function addContactMetadataToES(email, organizations) {
-    var deferred = Q.defer();
-
-    var esActions = [];
-
-    for (var i = 0; i < organizations.length; i++) {
-        var indexRecord = {
-            index: {
-                _index: 'database',
-                _type: 'metadata1',
-                _id: organizations[i]._id
-            }
-        };
-
-        delete organizations[i]['_id']
-
-        var dataRecord = organizations[i];
-        esActions.push(indexRecord);
-        esActions.push({
-            data: dataRecord
-        });
-    }
-
-    if (esActions.length > 0) {
-        client.bulk({
-            body: esActions
-        }, function(error, response) {
-            if (error) {
-                console.error(error);
-                sentryClient.captureMessage(error);
-                deferred.resolve(false);
-            }
-            deferred.resolve(true);
-        });
-    } else {
-        deferred.resolve(true);
-    }
-
-    return deferred.promise;
-}
-
-function addEmailToES(email, fullContactData, typeName) {
-    var deferred = Q.defer();
-
-    var esActions = [];
-    var indexRecord = {
-        index: {
-            _index: 'database',
-            _type: typeName,
-            _id: email
-        }
-    };
-    var dataRecord = fullContactData;
-
-    esActions.push(indexRecord);
-    esActions.push({
-        data: dataRecord
-    });
-
-    client.bulk({
-        body: esActions
-    }, function(error, response) {
-        if (error) {
-            console.error(error);
-            sentryClient.captureMessage(error);
-            deferred.resolve(false);
-        }
-        deferred.resolve(true);
-    });
-
-    return deferred.promise;
-}
-
 app.post('/fullcontactCallback', function(req, res) {
     var data = req.body;
     var email = data.email;
 
-    searchEmailInES(email, 'contacts').then(function(returnData) {
+    utils.searchEmailInES(email, 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(returnData._source));
         return;
     }, function(err) {
         if (returnData.status === 200) {
-            addEmailToES(email, data, 'contacts').then(function(status) {
+            utils.addEmailToES(email, data, 'contacts').then(function(status) {
                 res.setHeader('Content-Type', 'application/json');
                 res.send(JSON.stringify({
                     data: data
@@ -291,7 +199,7 @@ app.get('/fullcontact/:email', function(req, res) {
     email = email.toLowerCase();
 
     if (email !== '') {
-        searchEmailInES(email, 'contacts').then(function(returnData) {
+        utils.searchEmailInES(email, 'contacts').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -314,8 +222,8 @@ app.get('/fullcontact/:email', function(req, res) {
                     if (returnData && returnData.organizations) {
                         var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
                     }
-                    addEmailToES(email, returnData, 'contacts').then(function(status) {
-                        addContactMetadataToES(email, organizations).then(function(status) {
+                    utils.addEmailToES(email, returnData, 'contacts').then(function(status) {
+                        utils.addContactMetadataToES(email, organizations).then(function(status) {
                             res.setHeader('Content-Type', 'application/json');
                             res.send(JSON.stringify({
                                 data: returnData
@@ -358,7 +266,7 @@ app.get('/twitter/:email/:twitteruser', function(req, res) {
     email = email.toLowerCase();
 
     if (email !== '' || twitterUser !== '') {
-        searchEmailInES(email, 'twitters').then(function(returnData) {
+        utils.searchEmailInES(email, 'twitters').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -377,7 +285,7 @@ app.get('/twitter/:email/:twitteruser', function(req, res) {
                 }
 
                 if (returnData.status === 200) {
-                    addEmailToES(email, returnData, 'twitters').then(function(status) {
+                    utils.addEmailToES(email, returnData, 'twitters').then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({
                             data: returnData
@@ -409,13 +317,13 @@ app.get('/lookup/email/:email', function(req, res) {
     var email = req.params.email;
     email = email.toLowerCase();
 
-    searchEmailInES(email, 'contacts').then(function(returnData) {
+    utils.searchEmailInES(email, 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(returnData._source));
         return;
     }, function(error) {
-        searchEmailInES(email, 'twitters').then(function(returnData) {
+        utils.searchEmailInES(email, 'twitters').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));

@@ -43,102 +43,10 @@ function getTopic(cb) {
     });
 }
 
-function searchEmailInES(email) {
-    var deferred = Q.defer();
-
-    client.get({
-        index: 'database',
-        type: 'contacts',
-        id: email
-    }, function(error, response) {
-        if (error) {
-            sentryClient.captureMessage(error);
-            deferred.reject(error);
-        } else {
-            deferred.resolve(response);
-        }
-    });
-
-    return deferred.promise;
-}
-
-function addEmailToES(email, fullContactData) {
-    var deferred = Q.defer();
-
-    var esActions = [];
-    var indexRecord = {
-        index: {
-            _index: 'database',
-            _type: 'contacts',
-            _id: email
-        }
-    };
-    var dataRecord = fullContactData;
-
-    esActions.push(indexRecord);
-    esActions.push({
-        data: dataRecord
-    });
-
-    client.bulk({
-        body: esActions
-    }, function(error, response) {
-        if (error) {
-            console.error(error);
-            sentryClient.captureMessage(error);
-            deferred.resolve(false);
-        }
-        deferred.resolve(true);
-    });
-
-    return deferred.promise;
-}
-
-function addContactMetadataToES(email, organizations) {
-    var deferred = Q.defer();
-
-    var esActions = [];
-
-    for (var i = 0; i < organizations.length; i++) {
-        var indexRecord = {
-            index: {
-                _index: 'database',
-                _type: 'metadata1',
-                _id: organizations[i]._id
-            }
-        };
-
-        delete organizations[i]['_id']
-
-        var dataRecord = organizations[i];
-        esActions.push(indexRecord);
-        esActions.push({
-            data: dataRecord
-        });
-    }
-
-    if (esActions.length > 0) {
-        client.bulk({
-            body: esActions
-        }, function(error, response) {
-            if (error) {
-                console.error(error);
-                sentryClient.captureMessage(error);
-                deferred.resolve(false);
-            }
-            deferred.resolve(true);
-        });
-    } else {
-        deferred.resolve(true);
-    }
-
-    return deferred.promise;
-}
-
 function enhanceContact(email) {
     var deferred = Q.defer();
 
-    searchEmailInES(email).then(function(returnData) {
+    utils.searchEmailInES(email).then(function(returnData) {
         // If email is in ES already then we resolve it
         deferred.resolve(true);
     }, function(err) {
@@ -155,8 +63,8 @@ function enhanceContact(email) {
                     if (returnData && returnData.organizations) {
                         var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
                     }
-                    addEmailToES(email, returnData).then(function(status) {
-                        addContactMetadataToES(email, organizations).then(function(status) {
+                    utils.addEmailToES(email, returnData).then(function(status) {
+                        utils.addContactMetadataToES(email, organizations).then(function(status) {
                             deferred.resolve(true);
                         }, function(error) {
                             sentryClient.captureMessage(error);

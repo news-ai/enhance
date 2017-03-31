@@ -1,6 +1,89 @@
 'use strict';
 
+var Q = require('q');
+var elasticsearch = require('elasticsearch');
+
+// Instantiate a elasticsearch client
+var client = new elasticsearch.Client({
+    host: 'https://newsai:XkJRNRx2EGCd6@search1.newsai.org',
+    // log: 'trace',
+    rejectUnauthorized: false
+});
+
 var exports = module.exports = {};
+
+function addContactMetadataToES(email, organizations) {
+    var deferred = Q.defer();
+
+    var esActions = [];
+
+    for (var i = 0; i < organizations.length; i++) {
+        var indexRecord = {
+            index: {
+                _index: 'database',
+                _type: 'metadata1',
+                _id: organizations[i]._id
+            }
+        };
+
+        delete organizations[i]['_id']
+
+        var dataRecord = organizations[i];
+        esActions.push(indexRecord);
+        esActions.push({
+            data: dataRecord
+        });
+    }
+
+    if (esActions.length > 0) {
+        client.bulk({
+            body: esActions
+        }, function(error, response) {
+            if (error) {
+                console.error(error);
+                sentryClient.captureMessage(error);
+                deferred.resolve(false);
+            }
+            deferred.resolve(true);
+        });
+    } else {
+        deferred.resolve(true);
+    }
+
+    return deferred.promise;
+}
+
+function addEmailToES(email, fullContactData, typeName) {
+    var deferred = Q.defer();
+
+    var esActions = [];
+    var indexRecord = {
+        index: {
+            _index: 'database',
+            _type: typeName,
+            _id: email
+        }
+    };
+    var dataRecord = fullContactData;
+
+    esActions.push(indexRecord);
+    esActions.push({
+        data: dataRecord
+    });
+
+    client.bulk({
+        body: esActions
+    }, function(error, response) {
+        if (error) {
+            console.error(error);
+            sentryClient.captureMessage(error);
+            deferred.resolve(false);
+        }
+        deferred.resolve(true);
+    });
+
+    return deferred.promise;
+}
 
 function addContactOrganizationsToES(email, organizations) {
     var organizationObjects = [];
@@ -30,4 +113,26 @@ function addContactOrganizationsToES(email, organizations) {
     return organizationObjects;
 }
 
+function searchEmailInES(email, typeName) {
+    var deferred = Q.defer();
+
+    client.get({
+        index: 'database',
+        type: typeName,
+        id: email
+    }, function(error, response) {
+        if (error) {
+            sentryClient.captureMessage(error);
+            deferred.reject(error);
+        } else {
+            deferred.resolve(response);
+        }
+    });
+
+    return deferred.promise;
+}
+
 exports.addContactOrganizationsToES = addContactOrganizationsToES;
+exports.searchEmailInES = searchEmailInES;
+exports.addContactMetadataToES = addContactMetadataToES;
+exports.addEmailToES = addEmailToES;
