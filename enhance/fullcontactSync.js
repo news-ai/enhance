@@ -20,6 +20,9 @@ var client = new elasticsearch.Client({
 var FullContact = require('fullcontact');
 var fullcontact = FullContact.createClient('5686291ee0c6c944');
 
+// Internal scripts
+var utils = require("./utils.js");
+
 // Initialize Google Cloud
 var topicName = 'process-enhance';
 var subscriptionName = 'node-enhance';
@@ -132,34 +135,6 @@ function addContactMetadataToES(email, organizations) {
     return deferred.promise;
 }
 
-function addContactOrganizationsToES(email, organizations) {
-    var organizationObjects = [];
-
-    for (var i = 0; i < organizations.length; i++) {
-        if (organizations[i].name && organizations[i].name !== '') {
-            // Publication => Email
-            // Position => Email
-            var organizationNameWithoutSpecial = organizations[i].name.replace(/[^a-zA-Z ]/g, "");
-            organizationNameWithoutSpecial = organizationNameWithoutSpecial.replace(/[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u200b​\u202f\u205f​\u3000]/g, '')
-            organizationNameWithoutSpecial = organizationNameWithoutSpecial.toLowerCase();
-            organizationNameWithoutSpecial = organizationNameWithoutSpecial.split(' ').join('-');
-            var objectIndexName = email + '-' + organizationNameWithoutSpecial;
-
-            var indexObject = {
-                '_id': objectIndexName,
-                'email': email,
-                'organizationName': organizations[i].name,
-                'title': organizations[i].title || '',
-                'current': organizations[i].current || false
-            };
-
-            organizationObjects.push(indexObject);
-        }
-    }
-
-    return organizationObjects;
-}
-
 function enhanceContact(email) {
     var deferred = Q.defer();
 
@@ -178,7 +153,7 @@ function enhanceContact(email) {
                 if (returnData.status === 200) {
                     var organizations = [];
                     if (returnData && returnData.organizations) {
-                        var organizations = addContactOrganizationsToES(email, returnData.organizations);
+                        var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
                     }
                     addEmailToES(email, returnData).then(function(status) {
                         addContactMetadataToES(email, organizations).then(function(status) {

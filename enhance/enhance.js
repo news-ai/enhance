@@ -22,6 +22,9 @@ var client = new elasticsearch.Client({
 var FullContact = require('fullcontact');
 var fullcontact = FullContact.createClient('5686291ee0c6c944');
 
+// Internal scripts
+var utils = require("./utils.js");
+
 // Instantiate a sentry client
 var sentryClient = new raven.Client('https://475ea5ee391b4ee797eb40e9ee7cad62:780b0e5e8f9341daa240aec8ad6f495a@sentry.io/121869');
 sentryClient.patchGlobal();
@@ -197,34 +200,6 @@ function addEmailToES(email, fullContactData, typeName) {
     return deferred.promise;
 }
 
-function addContactOrganizationsToES(email, organizations) {
-    var organizationObjects = [];
-
-    for (var i = 0; i < organizations.length; i++) {
-        if (organizations[i].name && organizations[i].name !== '') {
-            // Publication => Email
-            // Position => Email
-            var organizationNameWithoutSpecial = organizations[i].name.replace(/[^a-zA-Z ]/g, "");
-            organizationNameWithoutSpecial = organizationNameWithoutSpecial.replace(/[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u200b​\u202f\u205f​\u3000]/g, '')
-            organizationNameWithoutSpecial = organizationNameWithoutSpecial.toLowerCase();
-            organizationNameWithoutSpecial = organizationNameWithoutSpecial.split(' ').join('-');
-            var objectIndexName = email + '-' + organizationNameWithoutSpecial;
-
-            var indexObject = {
-                '_id': objectIndexName,
-                'email': email,
-                'organizationName': organizations[i].name,
-                'title': organizations[i].title || '',
-                'current': organizations[i].current || false
-            };
-
-            organizationObjects.push(indexObject);
-        }
-    }
-
-    return organizationObjects;
-}
-
 app.post('/fullcontactCallback', function(req, res) {
     var data = req.body;
     var email = data.email;
@@ -337,7 +312,7 @@ app.get('/fullcontact/:email', function(req, res) {
                 if (returnData.status === 200) {
                     var organizations = [];
                     if (returnData && returnData.organizations) {
-                        var organizations = addContactOrganizationsToES(email, returnData.organizations);
+                        var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
                     }
                     addEmailToES(email, returnData, 'contacts').then(function(status) {
                         addContactMetadataToES(email, organizations).then(function(status) {
@@ -456,11 +431,17 @@ app.get('/lookup/email/:email', function(req, res) {
 });
 
 /*
+    * Must be able to have multiple queries together
+        - People at X publication, who's title is Y, and headlines are Z.
     * Possible Queries:
         1. Lookup a publication name
         2. Lookup a title
 
         => Fetch contact profiles from /contacts endpoint
+
+    * Necessary things:
+        - Pagination
+        - AND queries
 */
 app.get('/lookup/query', function(req, res) {
     var query = req.query.q;
@@ -474,11 +455,21 @@ app.get('/lookup/query', function(req, res) {
 
     var splitQuery = query.split(':');
     var publicationPosition = splitQuery.indexOf("publication");
-    console.log(publicationPosition)
+    var titlePosition = splitQuery.indexOf("title");
     if (publicationPosition > -1 && splitQuery.length > 1) {
         searchEmailsForPublicationName(splitQuery[publicationPosition+1]).then(function(emails) {
+            var contactEmails = [];
+
+            if (emails && emails.hits && emails.hits.hits) {
+                for (var i = 0; i < emails.hits.hits.length; i++) {
+                    if (emails.hits.hits[i] && emails.hits.hits[i]._source && emails.hits.hits[i]._source.data && emails.hits.hits[i]._source.data.email) {
+                        contactEmails.push(emails.hits.hits[i]._source.data.email);
+                    }
+                }
+            }
+
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(emails));
+            res.send(JSON.stringify(emails.hits.hits));
             return;
         }, function(error) {
             res.setHeader('Content-Type', 'application/json');
