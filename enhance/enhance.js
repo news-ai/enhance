@@ -205,7 +205,7 @@ function addContactOrganizationsToES(email, organizations) {
             // Publication => Email
             // Position => Email
             var organizationNameWithoutSpecial = organizations[i].name.replace(/[^a-zA-Z ]/g, "");
-            organizationNameWithoutSpecial = organizationNameWithoutSpecial.replace(/[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u200b​\u202f\u205f​\u3000]/g,'')
+            organizationNameWithoutSpecial = organizationNameWithoutSpecial.replace(/[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u200b​\u202f\u205f​\u3000]/g, '')
             organizationNameWithoutSpecial = organizationNameWithoutSpecial.toLowerCase();
             organizationNameWithoutSpecial = organizationNameWithoutSpecial.split(' ').join('-');
             var objectIndexName = email + '-' + organizationNameWithoutSpecial;
@@ -346,7 +346,7 @@ app.get('/fullcontact/:email', function(req, res) {
                                 data: returnData
                             }));
                             return;
-                        }, function (error) {
+                        }, function(error) {
                             // Return data not error. Doesn't matter if we fail to add metadata
                             res.setHeader('Content-Type', 'application/json');
                             res.send(JSON.stringify({
@@ -455,18 +455,45 @@ app.get('/lookup/email/:email', function(req, res) {
     });
 });
 
+/*
+    * Possible Queries:
+        1. Lookup a publication name
+        2. Lookup a title
+
+        => Fetch contact profiles from /contacts endpoint
+*/
 app.get('/lookup/query', function(req, res) {
-    searchEmailsForPublicationName('BuzzFeed').then(function(emails) {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(emails));
-        return;
-    }, function(error) {
+    var query = req.query.q;
+    if (!query || query === '') {
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify({
-            data: error
+            data: []
         }));
         return;
-    });
+    }
+
+    var splitQuery = query.split(':');
+    var publicationPosition = splitQuery.indexOf("publication");
+    console.log(publicationPosition)
+    if (publicationPosition > -1 && splitQuery.length > 1) {
+        searchEmailsForPublicationName(splitQuery[publicationPosition+1]).then(function(emails) {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(emails));
+            return;
+        }, function(error) {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({
+                data: error
+            }));
+            return;
+        });
+    } else {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify({
+            data: []
+        }));
+        return;
+    }
 });
 
 app.get('/location/:location', function(req, res) {
