@@ -43,8 +43,6 @@ function getTopic(cb) {
 function enhanceCompany(data) {
     var deferred = Q.defer();
 
-
-
     return deferred.promise;
 }
 

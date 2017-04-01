@@ -53,7 +53,7 @@ function addContactMetadataToES(email, organizations) {
     return deferred.promise;
 }
 
-function addEmailToES(email, fullContactData, typeName) {
+function addResourceToES(email, fullContactData, typeName) {
     var deferred = Q.defer();
 
     var esActions = [];
@@ -113,13 +113,13 @@ function addContactOrganizationsToES(email, organizations) {
     return organizationObjects;
 }
 
-function searchEmailInES(email, typeName) {
+function searchResourceInES(resourceId, typeName) {
     var deferred = Q.defer();
 
     client.get({
         index: 'database',
         type: typeName,
-        id: email
+        id: resourceId
     }, function(error, response) {
         if (error) {
             sentryClient.captureMessage(error);
@@ -132,7 +132,28 @@ function searchEmailInES(email, typeName) {
     return deferred.promise;
 }
 
+function searchResourceForQuery(query, resourceName) {
+    var deferred = Q.defer();
+
+    client.search({
+        index: 'database',
+        type: resourceName,
+        q: query
+    }, function(error, response) {
+        if (error) {
+            sentryClient.captureMessage(error);
+            deferred.reject(error);
+        } else {
+            console.log(response);
+            deferred.resolve(response);
+        }
+    });
+
+    return deferred.promise;
+}
+
 exports.addContactOrganizationsToES = addContactOrganizationsToES;
-exports.searchEmailInES = searchEmailInES;
+exports.searchResourceInES = searchResourceInES;
 exports.addContactMetadataToES = addContactMetadataToES;
-exports.addEmailToES = addEmailToES;
+exports.addResourceToES = addResourceToES;
+exports.searchResourceForQuery = searchResourceForQuery;

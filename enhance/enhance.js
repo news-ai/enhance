@@ -1,16 +1,22 @@
 'use strict';
 
+// Internal libraries
+var utils = require("./utils.js");
+
+// External libraries
 var Fullcontact = require('fullcontact');
-var moment = require('moment');
-var rp = require('request-promise');
 var elasticsearch = require('elasticsearch');
 var Q = require('q');
 var raven = require('raven');
-var gcloud = require('google-cloud')({
-    projectId: 'newsai-1166'
-});
 var express = require('express');
 var bodyParser = require('body-parser');
+
+// Instantiate a Sentry client
+var sentryClient = new raven.Client('https://475ea5ee391b4ee797eb40e9ee7cad62:780b0e5e8f9341daa240aec8ad6f495a@sentry.io/121869');
+sentryClient.patchGlobal();
+
+// Instantiate a FullContact client
+var fullcontact = Fullcontact.createClient('5686291ee0c6c944');
 
 // Instantiate a elasticsearch client
 var client = new elasticsearch.Client({
@@ -19,74 +25,25 @@ var client = new elasticsearch.Client({
     rejectUnauthorized: false
 });
 
-var FullContact = require('fullcontact');
-var fullcontact = FullContact.createClient('5686291ee0c6c944');
-
-// Internal scripts
-var utils = require("./utils.js");
-
-// Instantiate a sentry client
-var sentryClient = new raven.Client('https://475ea5ee391b4ee797eb40e9ee7cad62:780b0e5e8f9341daa240aec8ad6f495a@sentry.io/121869');
-sentryClient.patchGlobal();
-
+// Instantiate an Express client
 var app = express();
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
 
-function searchCompanyInES(company) {
-    var deferred = Q.defer();
-
-    client.get({
-        index: 'database',
-        type: 'companies',
-        id: company
-    }, function(error, response) {
-        if (error) {
-            sentryClient.captureMessage(error);
-            deferred.reject(error);
-        } else {
-            deferred.resolve(response);
-        }
-    });
-
-    return deferred.promise;
-}
-
-function searchEmailsForPublicationName(publicationName) {
-    var deferred = Q.defer();
-
-    client.search({
-        index: 'database',
-        type: 'metadata1',
-        q: publicationName
-    }, function(error, response) {
-        if (error) {
-            sentryClient.captureMessage(error);
-            deferred.reject(error);
-        } else {
-            console.log(response);
-            deferred.resolve(response);
-        }
-    });
-
-    return deferred.promise;
-}
-
 app.post('/fullcontactCallback', function(req, res) {
     var data = req.body;
     var email = data.email;
 
-    utils.searchEmailInES(email, 'contacts').then(function(returnData) {
+    utils.searchResourceInES(email, 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(returnData._source));
         return;
     }, function(err) {
         if (returnData.status === 200) {
-            utils.addEmailToES(email, data, 'contacts').then(function(status) {
+            utils.addResourceToES(email, data, 'contacts').then(function(status) {
                 res.setHeader('Content-Type', 'application/json');
                 res.send(JSON.stringify({
                     data: data
@@ -114,7 +71,7 @@ app.get('/company/:url', function(req, res) {
     url = url.toLowerCase();
 
     if (url !== '') {
-        searchCompanyInES(url).then(function(returnData) {
+        utils.searchResourceInES(url, 'companies').then(function(returnData) {
             // If url is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -133,7 +90,7 @@ app.get('/company/:url', function(req, res) {
                 }
 
                 if (returnData.status === 200) {
-                    utils.addEmailToES(url, returnData, 'companies').then(function(status) {
+                    utils.addResourceToES(url, returnData, 'companies').then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({
                             data: returnData
@@ -166,7 +123,7 @@ app.get('/fullcontact/:email', function(req, res) {
     email = email.toLowerCase();
 
     if (email !== '') {
-        utils.searchEmailInES(email, 'contacts').then(function(returnData) {
+        utils.searchResourceInES(email, 'contacts').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -189,7 +146,7 @@ app.get('/fullcontact/:email', function(req, res) {
                     if (returnData && returnData.organizations) {
                         var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
                     }
-                    utils.addEmailToES(email, returnData, 'contacts').then(function(status) {
+                    utils.addResourceToES(email, returnData, 'contacts').then(function(status) {
                         utils.addContactMetadataToES(email, organizations).then(function(status) {
                             res.setHeader('Content-Type', 'application/json');
                             res.send(JSON.stringify({
@@ -233,7 +190,7 @@ app.get('/twitter/:email/:twitteruser', function(req, res) {
     email = email.toLowerCase();
 
     if (email !== '' || twitterUser !== '') {
-        utils.searchEmailInES(email, 'twitters').then(function(returnData) {
+        utils.searchResourceInES(email, 'twitters').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -252,7 +209,7 @@ app.get('/twitter/:email/:twitteruser', function(req, res) {
                 }
 
                 if (returnData.status === 200) {
-                    utils.addEmailToES(email, returnData, 'twitters').then(function(status) {
+                    utils.addResourceToES(email, returnData, 'twitters').then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({
                             data: returnData
@@ -284,13 +241,13 @@ app.get('/lookup/email/:email', function(req, res) {
     var email = req.params.email;
     email = email.toLowerCase();
 
-    utils.searchEmailInES(email, 'contacts').then(function(returnData) {
+    utils.searchResourceInES(email, 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(returnData._source));
         return;
     }, function(error) {
-        utils.searchEmailInES(email, 'twitters').then(function(returnData) {
+        utils.searchResourceInES(email, 'twitters').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -332,7 +289,7 @@ app.get('/lookup/query', function(req, res) {
     var publicationPosition = splitQuery.indexOf("publication");
     var titlePosition = splitQuery.indexOf("title");
     if (publicationPosition > -1 && splitQuery.length > 1) {
-        searchEmailsForPublicationName(splitQuery[publicationPosition+1]).then(function(emails) {
+        utils.searchResourceForQuery(splitQuery[publicationPosition+1]).then(function(emails) {
             var contactEmails = [];
 
             if (emails && emails.hits && emails.hits.hits) {
