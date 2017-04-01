@@ -75,39 +75,6 @@ function searchEmailsForPublicationName(publicationName) {
     return deferred.promise;
 }
 
-function addCompanyToES(company, fullContactData) {
-    var deferred = Q.defer();
-
-    var esActions = [];
-    var indexRecord = {
-        index: {
-            _index: 'database',
-            _type: 'companies',
-            _id: company
-        }
-    };
-    var dataRecord = fullContactData;
-
-    esActions.push(indexRecord);
-    esActions.push({
-        data: dataRecord
-    });
-
-    client.bulk({
-        body: esActions
-    }, function(error, response) {
-        if (error) {
-            console.error(error);
-            sentryClient.captureMessage(error);
-            deferred.resolve(false);
-        }
-
-        deferred.resolve(true);
-    });
-
-    return deferred.promise;
-}
-
 app.post('/fullcontactCallback', function(req, res) {
     var data = req.body;
     var email = data.email;
@@ -166,7 +133,7 @@ app.get('/company/:url', function(req, res) {
                 }
 
                 if (returnData.status === 200) {
-                    addCompanyToES(url, returnData).then(function(status) {
+                    utils.addEmailToES(url, returnData, 'companies').then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({
                             data: returnData
