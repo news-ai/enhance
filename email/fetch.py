@@ -39,7 +39,7 @@ def get_internal_emails():
         doc_type='internal',
         scroll='2m',
         search_type='scan',
-        size=1000,
+        size=10,
         body={}
     )
 
