@@ -13,6 +13,7 @@ regex = '^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$'
 def check_email(address_to_verify):
     # Syntax check
     try:
+        address_to_verify = address_to_verify.lower()
         match = re.match(regex, address_to_verify)
         if match == None:
             return (False, 'Email invalid')
