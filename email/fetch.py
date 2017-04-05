@@ -56,7 +56,9 @@ def get_internal_emails():
 
         for email in page['hits']['hits']:
             email_address = email['_source']['data']['email']
+            print email_address
             email_valid = check_email(email_address)
+            print email_valid
 
             if len(email_valid) > 0:
                 email['_source']['data']['valid'] = email_valid[0]
@@ -71,6 +73,7 @@ def get_internal_emails():
 
                 to_append.append(doc)
 
-        print to_append
+        res = helpers.bulk(es, to_append)
+        print res
 
 get_internal_emails()
