@@ -39,7 +39,7 @@ def get_internal_emails():
         doc_type='internal1',
         scroll='2m',
         search_type='scan',
-        size=10,
+        size=1,
         body={}
     )
 
@@ -65,8 +65,8 @@ def get_internal_emails():
                 email['_source']['data']['reason'] = email_valid[1]
 
                 doc = {
-                    '_type': 'database',
-                    '_index': 'internal2',
+                    '_type': 'internal1',
+                    '_index': 'database',
                     '_id': email_address,
                     'data': email['_source']['data']
                 }
