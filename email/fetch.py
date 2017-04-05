@@ -36,7 +36,7 @@ es = Elasticsearch(
 def get_internal_emails():
     page = es.search(
         index='database',
-        doc_type='internal',
+        doc_type='internal1',
         scroll='2m',
         search_type='scan',
         size=10,
@@ -66,7 +66,7 @@ def get_internal_emails():
 
                 doc = {
                     '_type': 'database',
-                    '_index': 'internal',
+                    '_index': 'internal2',
                     '_id': email_address,
                     'data': email['_source']['data']
                 }
