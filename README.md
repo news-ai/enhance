@@ -8,7 +8,7 @@ Enhance influencer or company information.
 - `/metadata1` - organization and title metadata from FC
 - `/twitters` - data from FC querying twitter username
 - `/companies` - data from FC querying company domain name
-- `/internal` - internal contacts that were added
+- `/internal1` - internal contacts that were added
 
 ### Google Cloud
 
