@@ -52,8 +52,25 @@ def get_internal_emails():
         scroll_size = len(page['hits']['hits'])
         print "scroll size: " + str(scroll_size)
 
+        to_append = []
+
         for email in page['hits']['hits']:
-            print email['_source']['data']['email']
-            print check_email(email['_source']['data']['email'])
+            email_address = email['_source']['data']['email']
+            email_valid = check_email(email_address)
+
+            if len(email_valid) > 0:
+                email['_source']['data']['valid'] = email_valid[0]
+                email['_source']['data']['reason'] = email_valid[1]
+
+                doc = {
+                    '_type': 'database',
+                    '_index': 'internal',
+                    '_id': email_address,
+                    'data': email['_source']['data']
+                }
+
+                to_append.append(doc)
+
+        print to_append
 
 get_internal_emails()
