@@ -10,7 +10,6 @@ import requests
 import certifi
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from elasticsearch import Elasticsearch, helpers
-from gcloud import datastore
 
 # Internal
 from validate import check_email
@@ -18,9 +17,6 @@ from validate import check_email
 # Elasticsearch
 ELASTICSEARCH_USER = os.environ['NEWSAI_ELASTICSEARCH_USER']
 ELASTICSEARCH_PASSWORD = os.environ['NEWSAI_ELASTICSEARCH_PASSWORD']
-
-# Setup datastore connection for Google Cloud
-client = datastore.Client('newsai-1166')
 
 # Removing requests warning
 urllib3.disable_warnings()
