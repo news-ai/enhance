@@ -57,9 +57,9 @@ def get_internal_emails():
 
         for email in page['hits']['hits']:
             email_address = email['_source']['data']['email']
-            print email_address
+            print email_address.encode('utf-8')
             email_valid = check_email(email_address)
-            print email_valid
+            print email_valid.encode('utf-8')
 
             if len(email_valid) > 0:
                 email['_source']['data']['valid'] = email_valid[0]
