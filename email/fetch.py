@@ -75,5 +75,3 @@ def get_internal_emails():
 
         res = helpers.bulk(es, to_append)
         print res
-
-get_internal_emails()
