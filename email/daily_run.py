@@ -16,6 +16,7 @@ def run_emails():
 schedule.every().day.at("5:00").do(run_emails)
 
 print 'Starting schedule'
+run_emails()
 
 while True:
     schedule.run_pending()
