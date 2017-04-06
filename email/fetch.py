@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Stdlib imports
 import urllib3
 import os

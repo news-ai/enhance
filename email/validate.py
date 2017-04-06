@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# Stdlib imports
 import re
 import socket
 import smtplib
