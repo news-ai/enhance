@@ -59,7 +59,7 @@ def get_internal_emails():
             email_address = email['_source']['data']['email']
             print email_address.encode('utf-8')
             email_valid = check_email(email_address)
-            print email_valid.encode('utf-8')
+            print email_valid
 
             if len(email_valid) > 0:
                 email['_source']['data']['valid'] = email_valid[0]
