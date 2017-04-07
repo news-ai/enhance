@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "email-verify": "^0.1.1"
+    "elasticsearch": "^13.0.0-rc2",
+    "email-verify": "^0.1.1",
+    "q": "^1.5.0"
   }
 }
