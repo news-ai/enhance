@@ -17,8 +17,25 @@ var client = new elasticsearch.Client({
 function bulkAddEleastic(esActions) {
     var deferred = Q.defer();
 
+    var esBulkPost = [];
+
+    for (var i = 0; i < esActions.length; i++) {
+        var data = {
+            _index: 'database',
+            _type: 'internal1',
+            _id: esActions[i].email
+        }
+
+        esBulkPost.push(data);
+        esBulkPost.push({
+            data: esActions[i]
+        });
+    }
+
+    console.log(esBulkPost);
+
     client.bulk({
-        body: esActions
+        body: esBulkPost
     }, function(error, response) {
         if (error) {
             console.error(error);
@@ -102,24 +119,13 @@ function processEmail(email) {
             };
         }
 
-        data = {
-            _index: 'database',
-            _type: 'internal1',
-            _id: email._source.data.email,
-            data: data
-        }
         deferred.resolve(data);
     }, function(error) {
         var data = {
-            _index: 'database',
-            _type: 'internal1',
-            _id: email._source.data.email,
-            data: {
-                'email': email._source.data.email,
-                'valid': false,
-                'reason': error.message
-            }
-        };
+            'email': email._source.data.email,
+            'valid': false,
+            'reason': error.message
+        }
         deferred.resolve(data);
     });
 
@@ -144,7 +150,7 @@ getInternalEmails(0, []).then(function(response) {
             console.log(elasticResponse);
         }, function(error) {
             console.error(error);
-        })
+        });
     }, function(error) {
         console.error(error);
     });
