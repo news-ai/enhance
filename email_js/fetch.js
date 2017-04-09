@@ -108,8 +108,6 @@ function processEmail(email) {
             _id: email._source.data.email,
             data: data
         }
-
-        console.log(data);
         deferred.resolve(data);
     }, function(error) {
         var data = {
@@ -122,7 +120,6 @@ function processEmail(email) {
                 'reason': error.message
             }
         };
-        console.log(data);
         deferred.resolve(data);
     });
 
@@ -143,7 +140,11 @@ function processEmails(emails) {
 
 getInternalEmails(0, []).then(function(response) {
     processEmails(response).then(function(emails) {
-        console.log(emails);
+        addToElastic(emails).then(function(elasticResponse) {
+            console.log(elasticResponse);
+        }, function(error) {
+            console.error(error);
+        })
     }, function(error) {
         console.error(error);
     });
