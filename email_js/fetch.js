@@ -55,7 +55,7 @@ function processEmail(email) {
 
     validate.verifyEmail(email._source.data.email).then(function(response) {
         var data = {}
-        if (response.status) {
+        if (response.success) {
             data = {
                 'email': email._source.data.email,
                 'valid': true
@@ -67,6 +67,7 @@ function processEmail(email) {
                 'reason': response.info
             };
         }
+        console.log(data);
         deferred.resolve(data);
     }, function(error) {
         data = {
