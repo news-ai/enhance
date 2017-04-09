@@ -54,11 +54,27 @@ function processEmail(email) {
     var deferred = Q.defer();
 
     validate.verifyEmail(email._source.data.email).then(function(response) {
-        console.log(response);
-        deferred.resolve(email._source.data);
+        var data = {}
+        if (response.status) {
+            data = {
+                'email': email._source.data.email,
+                'valid': true
+            };
+        } else {
+            data = {
+                'email': email._source.data.email,
+                'valid': false,
+                'reason': response.info
+            };
+        }
+        deferred.resolve(data);
     }, function(error) {
-        console.error(error);
-        deferred.reject(error);
+        data = {
+            'email': email._source.data.email,
+            'valid': false,
+            'reason': error.message
+        };
+        deferred.resolve(data);
     });
 
     return deferred.promise;

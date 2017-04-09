@@ -13,8 +13,6 @@ var emailOptions = {
 function verifyEmail(email) {
     var deferred = Q.defer();
 
-    console.log(email);
-
     verifier.verify(email, emailOptions, function(err, info) {
         if (err) {
             deferred.reject(new Error(err));
