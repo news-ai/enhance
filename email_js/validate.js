@@ -24,15 +24,4 @@ function verifyEmail(email) {
     return deferred.promise;
 }
 
-function verifyEmails(emails) {
-    var allPromises = [];
-
-    for (var i = 0; i < emails.length; i++) {
-        var toExecute = verifyEmail(emails[i]);
-        allPromises.push(toExecute);
-    }
-
-    return Q.allSettled(allPromises);
-}
-
 validate.verifyEmail = verifyEmail;

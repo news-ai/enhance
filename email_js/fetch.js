@@ -14,6 +14,40 @@ var client = new elasticsearch.Client({
     rejectUnauthorized: false
 });
 
+function bulkAddEleastic(esActions) {
+    var deferred = Q.defer();
+
+    client.bulk({
+        body: esActions
+    }, function(error, response) {
+        if (error) {
+            console.error(error);
+            deferred.resolve(false);
+        }
+        deferred.resolve(true);
+    });
+
+    return deferred.promise;
+}
+
+function addToElastic(esActions) {
+    var deferred = Q.defer();
+    var allPromises = [];
+
+    if (esActions.length > 0) {
+        // Has to be an even number
+        var i, j, temp, chunk = 50;
+        for (i = 0, j = esActions.length; i < j; i += chunk) {
+            temp = esActions.slice(i, i + chunk);
+
+            var toExecute = bulkAddEleastic(temp);
+            allPromises.push(toExecute);
+        }
+    }
+
+    return Q.allSettled(allPromises);
+}
+
 function getInternalEmailPage(offset) {
     var deferred = Q.defer();
 
@@ -67,14 +101,28 @@ function processEmail(email) {
                 'reason': response.info
             };
         }
+
+        data = {
+            _index: 'database',
+            _type: 'internal1',
+            _id: email._source.data.email,
+            data: data
+        }
+
         console.log(data);
         deferred.resolve(data);
     }, function(error) {
-        data = {
-            'email': email._source.data.email,
-            'valid': false,
-            'reason': error.message
+        var data = {
+            _index: 'database',
+            _type: 'internal1',
+            _id: email._source.data.email,
+            data: {
+                'email': email._source.data.email,
+                'valid': false,
+                'reason': error.message
+            }
         };
+        console.log(data);
         deferred.resolve(data);
     });
 
