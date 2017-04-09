@@ -46,8 +46,33 @@ function getInternalEmails(offset, allData) {
     return deferred.promise;
 }
 
+function processEmail(email) {
+    var deferred = Q.defer();
+
+    console.log(email._source.data);
+    deferred.resolve(email._source.data);
+
+    return deferred.promise;
+}
+
+function processEmails(emails) {
+    var deferred = Q.defer();
+    var allPromises = [];
+
+    for (var i = 0; i < emails.length; i++) {
+        var toExecute = processEmail(emails[i]);
+        allPromises.push(toExecute);
+    }
+
+    return Q.all(allPromises);
+}
+
 getInternalEmails(0, []).then(function(response) {
-    console.log(response);
+    processEmails(response).then(function(emails) {
+        console.log(emails);
+    }, function (error) {
+        console.error(error);
+    });
 }, function(error) {
     console.error(error);
 });
