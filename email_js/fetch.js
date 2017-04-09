@@ -4,6 +4,9 @@
 var Q = require('q');
 var elasticsearch = require('elasticsearch');
 
+// Internal libraries
+var validate = require('./validate');
+
 // Instantiate a elasticsearch client
 var client = new elasticsearch.Client({
     host: 'https://newsai:XkJRNRx2EGCd6@search1.newsai.org',
@@ -26,6 +29,7 @@ function getInternalEmailPage(offset) {
         deferred.resolve(hits);
     }, function(err) {
         console.trace(err.message);
+        deferred.reject(err);
     });
 
     return deferred.promise;
@@ -49,8 +53,13 @@ function getInternalEmails(offset, allData) {
 function processEmail(email) {
     var deferred = Q.defer();
 
-    console.log(email._source.data);
-    deferred.resolve(email._source.data);
+    validate.verifyEmail(email._source.data.email).then(function(response) {
+        console.log(response);
+        deferred.resolve(email._source.data);
+    }, function(error) {
+        console.error(error);
+        deferred.reject(error);
+    });
 
     return deferred.promise;
 }
@@ -70,7 +79,7 @@ function processEmails(emails) {
 getInternalEmails(0, []).then(function(response) {
     processEmails(response).then(function(emails) {
         console.log(emails);
-    }, function (error) {
+    }, function(error) {
         console.error(error);
     });
 }, function(error) {

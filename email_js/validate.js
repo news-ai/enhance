@@ -1,6 +1,10 @@
 'use strict';
 
+// External libraries
+var Q = require('q');
 var verifier = require('email-verify');
+
+var validate = exports;
 
 var emailOptions = {
     'sender': 'abhi@newsai.org'
@@ -8,6 +12,8 @@ var emailOptions = {
 
 function verifyEmail(email) {
     var deferred = Q.defer();
+
+    console.log(email);
 
     verifier.verify(email, emailOptions, function(err, info) {
         if (err) {
@@ -30,3 +36,5 @@ function verifyEmails(emails) {
 
     return Q.allSettled(allPromises);
 }
+
+validate.verifyEmail = verifyEmail;
