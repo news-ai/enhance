@@ -103,94 +103,94 @@ function enhanceContacts(data) {
     return Q.all(allPromises);
 }
 
-// function subscribe(cb) {
-//     var subscription;
+function subscribe(cb) {
+    var subscription;
 
-//     // Event handlers
-//     function handleMessage(message) {
-//         cb(null, message);
-//     }
-
-//     function handleError(err) {
-//         console.error(err);
-//         sentryClient.captureMessage(err);
-//     }
-
-//     getTopic(function(err, topic) {
-//         if (err) {
-//             sentryClient.captureMessage(err);
-//             return cb(err);
-//         }
-
-//         topic.subscribe(subscriptionName, {
-//             autoAck: true,
-//             reuseExisting: true
-//         }, function(err, sub) {
-//             if (err) {
-//                 return cb(err);
-//             }
-
-//             subscription = sub;
-
-//             // Listen to and handle message and error events
-//             subscription.on('message', handleMessage);
-//             subscription.on('error', handleError);
-
-//             console.log('Listening to ' + topicName +
-//                 ' with subscription ' + subscriptionName);
-//         });
-//     });
-
-//     // Subscription cancellation function
-//     return function() {
-//         if (subscription) {
-//             // Remove event listeners
-//             subscription.removeListener('message', handleMessage);
-//             subscription.removeListener('error', handleError);
-//             subscription = undefined;
-//         }
-//     };
-// }
-
-// subscribe(function(err, message) {
-//     // Any errors received are considered fatal.
-//     if (err) {
-//         console.error(err);
-//         sentryClient.captureMessage(err);
-//         throw err;
-//     }
-//     console.log('Received request to enhance email ' + message.data.email);
-//     enhanceContacts(message.data)
-//         .then(function(status) {
-//             rp('https://hchk.io/fadd27af-0555-433d-8b5c-09c544ac1c16')
-//                 .then(function(htmlString) {
-//                     console.log('Completed execution for ' + message.data.email);
-//                 })
-//                 .catch(function(err) {
-//                     console.error(err);
-//                 });
-//         }, function(error) {
-//             console.error(error);
-//             sentryClient.captureMessage(error);
-//         });
-// });
-
-var message = {
-    data: {
-        'email': 'dieter@theverge.com'
+    // Event handlers
+    function handleMessage(message) {
+        cb(null, message);
     }
+
+    function handleError(err) {
+        console.error(err);
+        sentryClient.captureMessage(err);
+    }
+
+    getTopic(function(err, topic) {
+        if (err) {
+            sentryClient.captureMessage(err);
+            return cb(err);
+        }
+
+        topic.subscribe(subscriptionName, {
+            autoAck: true,
+            reuseExisting: true
+        }, function(err, sub) {
+            if (err) {
+                return cb(err);
+            }
+
+            subscription = sub;
+
+            // Listen to and handle message and error events
+            subscription.on('message', handleMessage);
+            subscription.on('error', handleError);
+
+            console.log('Listening to ' + topicName +
+                ' with subscription ' + subscriptionName);
+        });
+    });
+
+    // Subscription cancellation function
+    return function() {
+        if (subscription) {
+            // Remove event listeners
+            subscription.removeListener('message', handleMessage);
+            subscription.removeListener('error', handleError);
+            subscription = undefined;
+        }
+    };
 }
 
-enhanceContacts(message.data)
-    .then(function(status) {
-        rp('https://hchk.io/fadd27af-0555-433d-8b5c-09c544ac1c16')
-            .then(function (htmlString) {
-                console.log('Completed execution for ' + message.data.email);
-            })
-            .catch(function (err) {
-                console.error(err);
-            });
-    }, function(error) {
-        console.error(error);
-        sentryClient.captureMessage(error);
-    });
+subscribe(function(err, message) {
+    // Any errors received are considered fatal.
+    if (err) {
+        console.error(err);
+        sentryClient.captureMessage(err);
+        throw err;
+    }
+    console.log('Received request to enhance email ' + message.data.email);
+    enhanceContacts(message.data)
+        .then(function(status) {
+            rp('https://hchk.io/fadd27af-0555-433d-8b5c-09c544ac1c16')
+                .then(function(htmlString) {
+                    console.log('Completed execution for ' + message.data.email);
+                })
+                .catch(function(err) {
+                    console.error(err);
+                });
+        }, function(error) {
+            console.error(error);
+            sentryClient.captureMessage(error);
+        });
+});
+
+// var message = {
+//     data: {
+//         'email': 'dieter@theverge.com'
+//     }
+// }
+
+// enhanceContacts(message.data)
+//     .then(function(status) {
+//         rp('https://hchk.io/fadd27af-0555-433d-8b5c-09c544ac1c16')
+//             .then(function (htmlString) {
+//                 console.log('Completed execution for ' + message.data.email);
+//             })
+//             .catch(function (err) {
+//                 console.error(err);
+//             });
+//     }, function(error) {
+//         console.error(error);
+//         sentryClient.captureMessage(error);
+//     });
