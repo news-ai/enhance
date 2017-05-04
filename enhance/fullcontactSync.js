@@ -51,7 +51,7 @@ function enhanceContact(email, bulkEmailSync) {
         deferred.resolve(true);
     }, function(err) {
         // If email is not in ES then we look it up
-        fullcontact.person.email(email, function(err, returnData) {
+        fullcontact.person.email(email, 1, 'https://enhance.newsai.org/fullcontactCallback', email, function(err, returnData) {
             if (err) {
                 // If FullContact has no data on the email
                 sentryClient.captureMessage(err);
