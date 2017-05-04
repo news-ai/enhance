@@ -2,6 +2,7 @@
 
 var Q = require('q');
 var elasticsearch = require('elasticsearch');
+var raven = require('raven');
 
 // Instantiate a elasticsearch client
 var client = new elasticsearch.Client({
@@ -9,6 +10,10 @@ var client = new elasticsearch.Client({
     // log: 'trace',
     rejectUnauthorized: false
 });
+
+// Instantiate a sentry client
+var sentryClient = new raven.Client('https://475ea5ee391b4ee797eb40e9ee7cad62:780b0e5e8f9341daa240aec8ad6f495a@sentry.io/121869');
+sentryClient.patchGlobal();
 
 var exports = module.exports = {};
 

@@ -34,7 +34,11 @@ app.use(bodyParser.urlencoded({
 
 app.post('/fullcontactCallback', function(req, res) {
     var data = req.body;
-    var email = data.email;
+    var email = data.webhookId;
+    var result = data.result;
+    var returnData = JSON.parse(result);
+
+    console.log(returnData)
 
     utils.searchResourceInES(email, 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
@@ -43,12 +47,25 @@ app.post('/fullcontactCallback', function(req, res) {
         return;
     }, function(err) {
         if (returnData.status === 200) {
-            utils.addResourceToES(email, data, 'contacts').then(function(status) {
-                res.setHeader('Content-Type', 'application/json');
-                res.send(JSON.stringify({
-                    data: data
-                }));
-                return;
+            var organizations = [];
+            if (returnData && returnData.organizations) {
+                var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
+            }
+            utils.addResourceToES(email, returnData, 'contacts').then(function(status) {
+                utils.addContactMetadataToES(email, organizations).then(function(status) {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: returnData
+                    }));
+                    return;
+                }, function(error) {
+                    // Return data not error. Doesn't matter if we fail to add metadata
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: returnData
+                    }));
+                    return;
+                })
             }, function(error) {
                 res.setHeader('Content-Type', 'application/json');
                 res.send(JSON.stringify({
@@ -59,7 +76,7 @@ app.post('/fullcontactCallback', function(req, res) {
         } else {
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify({
-                data: data
+                data: returnData
             }));
             return;
         }
