@@ -135,6 +135,71 @@ app.get('/company/:url', function(req, res) {
     }
 });
 
+app.get('/md/:email', function(req, res) {
+    var email = req.params.email;
+    email = email.toLowerCase();
+
+    if (email !== '') {
+        utils.searchResourceInES(email, 'contacts').then(function(returnData) {
+            // If email is in ES already then we resolve it
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(returnData._source));
+            return;
+        }, function(err) {
+            // If email is not in ES then we look it up
+            fullcontact.person.email(email, function(err, returnData) {
+                if (err) {
+                    // If FullContact has no data on the email
+                    sentryClient.captureMessage(err);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: err
+                    }));
+                    return;
+                }
+
+                if (returnData.status === 200) {
+                    var organizations = [];
+                    if (returnData && returnData.organizations) {
+                        var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
+                    }
+                    utils.addResourceToES(email, returnData, 'contacts').then(function(status) {
+                        utils.addContactMetadataToES(email, organizations).then(function(status) {
+                            res.setHeader('Content-Type', 'application/json');
+                            res.send(JSON.stringify({
+                                data: returnData
+                            }));
+                            return;
+                        }, function(error) {
+                            // Return data not error. Doesn't matter if we fail to add metadata
+                            res.setHeader('Content-Type', 'application/json');
+                            res.send(JSON.stringify({
+                                data: returnData
+                            }));
+                            return;
+                        })
+                    }, function(error) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.send(JSON.stringify({
+                            data: error
+                        }));
+                        return;
+                    });
+                } else {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: returnData
+                    }));
+                    return;
+                }
+            });
+        });
+    } else {
+        res.send('Missing email');
+        return;
+    }
+});
+
 app.get('/fullcontact/:email', function(req, res) {
     var email = req.params.email;
     email = email.toLowerCase();
