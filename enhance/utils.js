@@ -58,13 +58,13 @@ function addContactMetadataToES(email, organizations) {
     return deferred.promise;
 }
 
-function addResourceToES(email, fullContactData, typeName) {
+function addResourceToES(email, fullContactData, resourceName, typeName) {
     var deferred = Q.defer();
 
     var esActions = [];
     var indexRecord = {
         index: {
-            _index: 'database',
+            _index: resourceName,
             _type: typeName,
             _id: email
         }
@@ -118,11 +118,11 @@ function addContactOrganizationsToES(email, organizations) {
     return organizationObjects;
 }
 
-function searchResourceInES(resourceId, typeName) {
+function searchResourceInES(resourceId, resourceName, typeName) {
     var deferred = Q.defer();
 
     client.get({
-        index: 'database',
+        index: resourceName,
         type: typeName,
         id: resourceId
     }, function(error, response) {

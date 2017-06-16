@@ -46,7 +46,7 @@ function getTopic(cb) {
 function enhanceContact(email, bulkEmailSync) {
     var deferred = Q.defer();
 
-    utils.searchResourceInES(email, 'contacts').then(function(returnData) {
+    utils.searchResourceInES(email, 'database', 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
         deferred.resolve(true);
     }, function(err) {
@@ -63,7 +63,7 @@ function enhanceContact(email, bulkEmailSync) {
                     if (returnData && returnData.organizations) {
                         var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
                     }
-                    utils.addResourceToES(email, returnData).then(function(status) {
+                    utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
                         utils.addContactMetadataToES(email, organizations).then(function(status) {
                             deferred.resolve(true);
                         }, function(error) {

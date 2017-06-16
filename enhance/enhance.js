@@ -40,7 +40,7 @@ app.post('/fullcontactCallback', function(req, res) {
 
     console.log(returnData)
 
-    utils.searchResourceInES(email, 'contacts').then(function(returnData) {
+    utils.searchResourceInES(email, 'database', 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(returnData._source));
@@ -51,7 +51,7 @@ app.post('/fullcontactCallback', function(req, res) {
             if (returnData && returnData.organizations) {
                 var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
             }
-            utils.addResourceToES(email, returnData, 'contacts').then(function(status) {
+            utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
                 utils.addContactMetadataToES(email, organizations).then(function(status) {
                     res.setHeader('Content-Type', 'application/json');
                     res.send(JSON.stringify({
@@ -88,7 +88,7 @@ app.get('/company/:url', function(req, res) {
     url = url.toLowerCase();
 
     if (url !== '') {
-        utils.searchResourceInES(url, 'companies').then(function(returnData) {
+        utils.searchResourceInES(url, 'database', 'companies').then(function(returnData) {
             // If url is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -107,7 +107,7 @@ app.get('/company/:url', function(req, res) {
                 }
 
                 if (returnData.status === 200) {
-                    utils.addResourceToES(url, returnData, 'companies').then(function(status) {
+                    utils.addResourceToES(url, returnData, 'database', 'companies').then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({
                             data: returnData
@@ -140,59 +140,15 @@ app.get('/md/:email', function(req, res) {
     email = email.toLowerCase();
 
     if (email !== '') {
-        utils.searchResourceInES(email, 'contacts').then(function(returnData) {
+        utils.searchResourceInES(email, 'md', 'contacts').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
             return;
         }, function(err) {
-            // If email is not in ES then we look it up
-            fullcontact.person.email(email, function(err, returnData) {
-                if (err) {
-                    // If FullContact has no data on the email
-                    sentryClient.captureMessage(err);
-                    res.setHeader('Content-Type', 'application/json');
-                    res.send(JSON.stringify({
-                        data: err
-                    }));
-                    return;
-                }
-
-                if (returnData.status === 200) {
-                    var organizations = [];
-                    if (returnData && returnData.organizations) {
-                        var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
-                    }
-                    utils.addResourceToES(email, returnData, 'contacts').then(function(status) {
-                        utils.addContactMetadataToES(email, organizations).then(function(status) {
-                            res.setHeader('Content-Type', 'application/json');
-                            res.send(JSON.stringify({
-                                data: returnData
-                            }));
-                            return;
-                        }, function(error) {
-                            // Return data not error. Doesn't matter if we fail to add metadata
-                            res.setHeader('Content-Type', 'application/json');
-                            res.send(JSON.stringify({
-                                data: returnData
-                            }));
-                            return;
-                        })
-                    }, function(error) {
-                        res.setHeader('Content-Type', 'application/json');
-                        res.send(JSON.stringify({
-                            data: error
-                        }));
-                        return;
-                    });
-                } else {
-                    res.setHeader('Content-Type', 'application/json');
-                    res.send(JSON.stringify({
-                        data: returnData
-                    }));
-                    return;
-                }
-            });
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({}));
+            return;
         });
     } else {
         res.send('Missing email');
@@ -205,7 +161,7 @@ app.get('/fullcontact/:email', function(req, res) {
     email = email.toLowerCase();
 
     if (email !== '') {
-        utils.searchResourceInES(email, 'contacts').then(function(returnData) {
+        utils.searchResourceInES(email, 'database', 'contacts').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -228,7 +184,7 @@ app.get('/fullcontact/:email', function(req, res) {
                     if (returnData && returnData.organizations) {
                         var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
                     }
-                    utils.addResourceToES(email, returnData, 'contacts').then(function(status) {
+                    utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
                         utils.addContactMetadataToES(email, organizations).then(function(status) {
                             res.setHeader('Content-Type', 'application/json');
                             res.send(JSON.stringify({
@@ -272,7 +228,7 @@ app.get('/twitter/:email/:twitteruser', function(req, res) {
     email = email.toLowerCase();
 
     if (email !== '' || twitterUser !== '') {
-        utils.searchResourceInES(email, 'twitters').then(function(returnData) {
+        utils.searchResourceInES(email, 'database', 'twitters').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -291,7 +247,7 @@ app.get('/twitter/:email/:twitteruser', function(req, res) {
                 }
 
                 if (returnData.status === 200) {
-                    utils.addResourceToES(email, returnData, 'twitters').then(function(status) {
+                    utils.addResourceToES(email, returnData, 'database', 'twitters').then(function(status) {
                         res.setHeader('Content-Type', 'application/json');
                         res.send(JSON.stringify({
                             data: returnData
@@ -323,13 +279,13 @@ app.get('/lookup/email/:email', function(req, res) {
     var email = req.params.email;
     email = email.toLowerCase();
 
-    utils.searchResourceInES(email, 'contacts').then(function(returnData) {
+    utils.searchResourceInES(email, 'database', 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(returnData._source));
         return;
     }, function(error) {
-        utils.searchResourceInES(email, 'twitters').then(function(returnData) {
+        utils.searchResourceInES(email, 'database', 'twitters').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
