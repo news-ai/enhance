@@ -135,26 +135,23 @@ app.get('/company/:url', function(req, res) {
     }
 });
 
-app.get('/md/:email', function(req, res) {
-    var email = req.params.email;
-    email = email.toLowerCase();
+app.post('/md', function(req, res) {
+    var data = req.body;
 
-    if (email !== '') {
-        utils.searchResourceInES(email, 'md', 'contacts').then(function(returnData) {
-            // If email is in ES already then we resolve it
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(returnData._source));
-            return;
-        }, function(err) {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({}));
-            return;
-        });
-    } else {
-        res.send('Missing email');
+    utils.addResourceToES(data.data.email, data.data, 'md', 'contacts').then(function(status) {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify({
+            data: returnData
+        }));
         return;
-    }
-});
+    }, function(error) {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify({
+            data: error
+        }));
+        return;
+    });
+}
 
 app.get('/fullcontact/:email', function(req, res) {
     var email = req.params.email;
