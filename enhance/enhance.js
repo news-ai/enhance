@@ -135,6 +135,31 @@ app.get('/company/:url', function(req, res) {
     }
 });
 
+app.get('/md/:email', function(req, res) {
+    var email = req.params.email;
+    email = email.toLowerCase();
+
+    if (email !== '') {
+        utils.searchResourceInES(email, 'md', 'contacts').then(function(returnData) {
+            // If email is in ES already then we resolve it
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(returnData._source));
+            return;
+        }, function(err) {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(500).send(JSON.stringify({
+                data: {
+                    Status: 500
+                }
+            }));
+            return;
+        });
+    } else {
+        res.send('Missing email');
+        return;
+    }
+});
+
 app.post('/md', function(req, res) {
     var data = req.body;
 
