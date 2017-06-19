@@ -141,7 +141,7 @@ app.post('/md', function(req, res) {
     utils.addResourceToES(data.data.email, data.data, 'md', 'contacts').then(function(status) {
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify({
-            data: returnData
+            data: data.data
         }));
         return;
     }, function(error) {
