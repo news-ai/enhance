@@ -151,7 +151,7 @@ app.post('/md', function(req, res) {
         }));
         return;
     });
-}
+});
 
 app.get('/fullcontact/:email', function(req, res) {
     var email = req.params.email;
