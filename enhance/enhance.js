@@ -79,8 +79,6 @@ app.post('/fullcontactCallback', function(req, res) {
     var result = data.result;
     var returnData = JSON.parse(result);
 
-    console.log(returnData)
-
     utils.searchResourceInES(email, 'database', 'contacts').then(function(returnData) {
         // If email is in ES already then we resolve it
         res.setHeader('Content-Type', 'application/json');
@@ -231,7 +229,19 @@ app.get('/fullcontact/:email', function(req, res) {
             return;
         }, function(err) {
             // If email is not in ES then we look it up
-            
+            getFullContactProfile(email).then(function (returnData){
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({
+                    data: returnData
+                }));
+                return;
+            }, function (error) {
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({
+                    data: error
+                }));
+                return;
+            });
         });
     } else {
         res.send('Missing email');
