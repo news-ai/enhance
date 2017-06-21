@@ -32,6 +32,47 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
+function getFullContactProfile(email) {
+    var deferred = Q.defer();
+
+    fullcontact.person.email(email, function(err, returnData) {
+        if (err) {
+            // If FullContact has no data on the email
+            sentryClient.captureMessage(err);
+            deferred.resolve(err);
+            return;
+        }
+
+        if (returnData.status === 200) {
+            var organizations = [];
+            if (returnData && returnData.organizations) {
+                var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
+            }
+            utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
+                utils.addContactMetadataToES(email, organizations).then(function(status) {
+                    deferred.resolve(returnData);
+                    return;
+                }, function(error) {
+                    // Return data not error. Doesn't matter if we fail to add metadata
+                    sentryClient.captureMessage(error);
+                    deferred.resolve(returnData);
+                    return;
+                })
+            }, function(error) {
+                sentryClient.captureMessage(error);
+                deferred.resolve(error);
+                return;
+            });
+        } else {
+            sentryClient.captureMessage(error);
+            deferred.resolve(returnData);
+            return;
+        }
+    });
+
+    return deferred.promise;
+}
+
 app.post('/fullcontactCallback', function(req, res) {
     var data = req.body;
     var email = data.webhookId;
@@ -190,52 +231,7 @@ app.get('/fullcontact/:email', function(req, res) {
             return;
         }, function(err) {
             // If email is not in ES then we look it up
-            fullcontact.person.email(email, function(err, returnData) {
-                if (err) {
-                    // If FullContact has no data on the email
-                    sentryClient.captureMessage(err);
-                    res.setHeader('Content-Type', 'application/json');
-                    res.send(JSON.stringify({
-                        data: err
-                    }));
-                    return;
-                }
-
-                if (returnData.status === 200) {
-                    var organizations = [];
-                    if (returnData && returnData.organizations) {
-                        var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
-                    }
-                    utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
-                        utils.addContactMetadataToES(email, organizations).then(function(status) {
-                            res.setHeader('Content-Type', 'application/json');
-                            res.send(JSON.stringify({
-                                data: returnData
-                            }));
-                            return;
-                        }, function(error) {
-                            // Return data not error. Doesn't matter if we fail to add metadata
-                            res.setHeader('Content-Type', 'application/json');
-                            res.send(JSON.stringify({
-                                data: returnData
-                            }));
-                            return;
-                        })
-                    }, function(error) {
-                        res.setHeader('Content-Type', 'application/json');
-                        res.send(JSON.stringify({
-                            data: error
-                        }));
-                        return;
-                    });
-                } else {
-                    res.setHeader('Content-Type', 'application/json');
-                    res.send(JSON.stringify({
-                        data: returnData
-                    }));
-                    return;
-                }
-            });
+            
         });
     } else {
         res.send('Missing email');
