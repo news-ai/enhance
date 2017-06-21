@@ -17,7 +17,7 @@ sentryClient.patchGlobal();
 
 var exports = module.exports = {};
 
-function addContactMetadataToES(email, organizations) {
+function addContactMetadataToES(email, organizations, resourceName, typeName) {
     var deferred = Q.defer();
 
     var esActions = [];
@@ -25,8 +25,8 @@ function addContactMetadataToES(email, organizations) {
     for (var i = 0; i < organizations.length; i++) {
         var indexRecord = {
             index: {
-                _index: 'database',
-                _type: 'metadata1',
+                _index: resourceName,
+                _type: typeName,
                 _id: organizations[i]._id
             }
         };

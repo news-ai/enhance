@@ -64,7 +64,7 @@ function enhanceContact(email, bulkEmailSync) {
                         var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
                     }
                     utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
-                        utils.addContactMetadataToES(email, organizations).then(function(status) {
+                        utils.addContactMetadataToES(email, organizations, 'database', 'contacts').then(function(status) {
                             deferred.resolve(true);
                         }, function(error) {
                             sentryClient.captureMessage(error);
