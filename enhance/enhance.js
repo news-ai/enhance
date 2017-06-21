@@ -203,7 +203,7 @@ app.post('/md', function(req, res) {
     var data = req.body;
 
     var organizations = [];
-    if (returnData && returnData.organizations) {
+    if (data && data.data && data.data.organizations) {
         var organizations = utils.addContactOrganizationsToES(data.data.email, data.data.organizations);
     }
 
