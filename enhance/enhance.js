@@ -205,6 +205,23 @@ app.post('/md', function(req, res) {
     var organizations = [];
     if (data && data.data && data.data.organizations) {
         var organizations = utils.addContactOrganizationsToES(data.data.email, data.data.organizations);
+
+        for (var i = 0; i < data.data.organizations.length; i++) {
+            // ES has issues with date-times that are not formatted the same way
+            if (data.data.organizations[i].startDate) {
+                var splitStartDate = data.data.organizations[i].startDate.split('-');
+                if (splitStartDate.length == 2) {
+                    data.data.organizations[i].startDate += '-01'
+                }
+            }
+
+            if (data.data.organizations[i].endDate) {
+                var splitEndDate = data.data.organizations[i].endDate.split('-');
+                if (splitEndDate.length == 2) {
+                    data.data.organizations[i].endDate += '-01'
+                }
+            }
+        }
     }
 
     utils.addResourceToES(data.data.email, data.data, 'md', 'contacts').then(function(status) {
