@@ -49,7 +49,7 @@ function getFullContactProfile(email) {
                 var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
             }
             utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
-                utils.addContactMetadataToES(email, organizations, 'database', 'metadata1').then(function(status) {
+                utils.addContactMetadataToES(organizations, 'database', 'metadata1').then(function(status) {
                     deferred.resolve(returnData);
                     return;
                 }, function(error) {
@@ -91,7 +91,7 @@ app.post('/fullcontactCallback', function(req, res) {
                 var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
             }
             utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
-                utils.addContactMetadataToES(email, organizations, 'database', 'metadata1').then(function(status) {
+                utils.addContactMetadataToES(organizations, 'database', 'metadata1').then(function(status) {
                     res.setHeader('Content-Type', 'application/json');
                     res.send(JSON.stringify({
                         data: returnData
@@ -203,10 +203,26 @@ app.post('/md', function(req, res) {
     var data = req.body;
 
     var organizations = [];
+    var organizationNames = [];
     if (data && data.data && data.data.organizations) {
         var organizations = utils.addContactOrganizationsToES(data.data.email, data.data.organizations);
 
         for (var i = 0; i < data.data.organizations.length; i++) {
+            // Format ID of email
+            if (data.data.organizations[i].name && data.data.organizations[i].name !== '') {
+                var organizationNameWithoutSpecial = data.data.organizations[i].name.replace(/[^a-zA-Z ]/g, "");
+                organizationNameWithoutSpecial = organizationNameWithoutSpecial.replace(/[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u200b​\u202f\u205f​\u3000]/g, '')
+                organizationNameWithoutSpecial = organizationNameWithoutSpecial.toLowerCase();
+                organizationNameWithoutSpecial = organizationNameWithoutSpecial.split(' ').join('-');
+
+                var organization = {
+                    '_id': organizationNameWithoutSpecial,
+                    'organizationName': data.data.organizations[i].name
+                };
+
+                organizationNames.push(organization);
+            }
+
             // ES has issues with date-times that are not formatted the same way
             if (data.data.organizations[i].startDate) {
                 var splitStartDate = data.data.organizations[i].startDate.split('-');
@@ -225,12 +241,22 @@ app.post('/md', function(req, res) {
     }
 
     utils.addResourceToES(data.data.email, data.data, 'md', 'contacts').then(function(status) {
-        utils.addContactMetadataToES(data.data.email, organizations, 'md', 'metadata1').then(function(status) {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({
-                data: data.data
-            }));
-            return;
+        utils.addContactMetadataToES(organizations, 'md', 'metadata1').then(function(status) {
+            utils.addContactMetadataToES(organizationNames, 'md', 'publications').then(function(status) {
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({
+                    data: data.data
+                }));
+                return;
+            }, function(error) {
+                // Return data not error. Doesn't matter if we fail to add metadata
+                sentryClient.captureMessage(error);
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({
+                    data: data.data
+                }));
+                return;
+            });
         }, function(error) {
             // Return data not error. Doesn't matter if we fail to add metadata
             sentryClient.captureMessage(error);

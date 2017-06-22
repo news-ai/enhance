@@ -17,7 +17,7 @@ sentryClient.patchGlobal();
 
 var exports = module.exports = {};
 
-function addContactMetadataToES(email, organizations, resourceName, typeName) {
+function addContactMetadataToES(organizations, resourceName, typeName) {
     var deferred = Q.defer();
 
     var esActions = [];
