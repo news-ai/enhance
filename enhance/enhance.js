@@ -257,15 +257,42 @@ app.post('/md', function(req, res) {
         }
     }
 
+    var socialProfiles = [];
+    if (data && data.data && data.data.socialProfiles) {
+        for (var i = 0; i < data.data.socialProfiles.length; i++) {
+            var momentTime = moment().format('YYYY-MM-DDTHH:mm:ss');
+            var username = data.data.socialProfiles[i].username;
+            var socialNetwork = data.data.socialProfiles[i].typeId;
+
+            var socialInformation = {
+                '_id': socialNetwork + username,
+                'Username': username,
+                'Created': momentTime
+            };
+
+            socialProfiles.push(socialInformation);
+        }
+    }
+
     utils.addResourceToES(data.data.email, data.data, 'md', 'contacts').then(function(status) {
         utils.addContactMetadataToES(organizations, 'md', 'metadata1').then(function(status) {
             utils.addContactMetadataToES(organizationNames, 'md', 'publications').then(function(status) {
                 utils.addContactMetadataToES(rssFeeds, 'md', 'feeds').then(function(status) {
-                    res.setHeader('Content-Type', 'application/json');
-                    res.send(JSON.stringify({
-                        data: data.data
-                    }));
-                    return;
+                    utils.addContactMetadataToES(socialProfiles, 'md', 'socialProfiles').then(function(status) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.send(JSON.stringify({
+                            data: data.data
+                        }));
+                        return;
+                    }, function(error) {
+                        // Return data not error. Doesn't matter if we fail to add metadata
+                        sentryClient.captureMessage(error);
+                        res.setHeader('Content-Type', 'application/json');
+                        res.send(JSON.stringify({
+                            data: data.data
+                        }));
+                        return;
+                    });
                 }, function(error) {
                     // Return data not error. Doesn't matter if we fail to add metadata
                     sentryClient.captureMessage(error);
