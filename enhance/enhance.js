@@ -240,6 +240,22 @@ app.post('/md', function(req, res) {
         }
     }
 
+    var rssFeeds = [];
+    if (data && data.data && data.data.writingInformation && data.data.writingInformation.rss) {
+        for (var i = 0; i < data.data.writingInformation.rss.length; i++) {
+            var momentTime = moment().format('YYYY-MM-DDTHH:mm:ss');
+
+            var rssFeed = {
+                '_id': data.data.writingInformation.rss[i],
+                'URL': data.data.writingInformation.rss[i],
+                'Created': momentTime,
+                'Updated': momentTime
+            };
+
+            rssFeeds.push(rssFeed);
+        }
+    }
+
     utils.addResourceToES(data.data.email, data.data, 'md', 'contacts').then(function(status) {
         utils.addContactMetadataToES(organizations, 'md', 'metadata1').then(function(status) {
             utils.addContactMetadataToES(organizationNames, 'md', 'publications').then(function(status) {

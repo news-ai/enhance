@@ -1,7 +1,6 @@
 'use strict';
 
 var Fullcontact = require('fullcontact');
-var moment = require('moment');
 var rp = require('request-promise');
 var elasticsearch = require('elasticsearch');
 var Q = require('q');
