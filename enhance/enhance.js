@@ -7,6 +7,7 @@ var utils = require("./utils.js");
 var Fullcontact = require('fullcontact');
 var elasticsearch = require('elasticsearch');
 var Q = require('q');
+var moment = require('moment');
 var raven = require('raven');
 var express = require('express');
 var bodyParser = require('body-parser');
