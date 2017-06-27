@@ -259,11 +259,21 @@ app.post('/md', function(req, res) {
     utils.addResourceToES(data.data.email, data.data, 'md', 'contacts').then(function(status) {
         utils.addContactMetadataToES(organizations, 'md', 'metadata1').then(function(status) {
             utils.addContactMetadataToES(organizationNames, 'md', 'publications').then(function(status) {
-                res.setHeader('Content-Type', 'application/json');
-                res.send(JSON.stringify({
-                    data: data.data
-                }));
-                return;
+                utils.addContactMetadataToES(rssFeeds, 'md', 'feeds').then(function(status) {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: data.data
+                    }));
+                    return;
+                }, function(error) {
+                    // Return data not error. Doesn't matter if we fail to add metadata
+                    sentryClient.captureMessage(error);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: data.data
+                    }));
+                    return;
+                });
             }, function(error) {
                 // Return data not error. Doesn't matter if we fail to add metadata
                 sentryClient.captureMessage(error);
