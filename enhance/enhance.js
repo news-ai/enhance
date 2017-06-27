@@ -264,7 +264,7 @@ app.post('/md', function(req, res) {
             var username = data.data.socialProfiles[i].username;
             var socialNetwork = data.data.socialProfiles[i].typeId;
 
-            if (username !== '' && socialNetwork !== '') {
+            if (username && socialNetwork && username !== '' && socialNetwork !== '') {
                 var socialInformation = {
                     '_id': socialNetwork + '-' + username,
                     'Username': username,
