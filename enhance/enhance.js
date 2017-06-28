@@ -271,7 +271,8 @@ app.post('/md', function(req, res) {
                     '_id': socialNetwork + '-' + username,
                     'Username': username,
                     'Created': momentTime,
-                    'Network': socialNetwork
+                    'Network': socialNetwork,
+                    'Email': data.data.email
                 };
 
                 socialProfiles.push(socialInformation);
