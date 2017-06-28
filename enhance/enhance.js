@@ -265,6 +265,8 @@ app.post('/md', function(req, res) {
             var socialNetwork = data.data.socialProfiles[i].typeId;
 
             if (username && socialNetwork && username !== '' && socialNetwork !== '') {
+                socialNetwork = socialNetwork.toLowerCase();
+                username = username.toLowerCase();
                 var socialInformation = {
                     '_id': socialNetwork + '-' + username,
                     'Username': username,
