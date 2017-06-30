@@ -25,7 +25,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 # Elasticsearch setup
 es = Elasticsearch(
-    ['https://search1.newsai.org'],
+    ['https://search.newsai.org'],
     http_auth=(ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD),
     port=443,
     use_ssl=True,
