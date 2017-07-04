@@ -18,6 +18,7 @@ sentryClient.patchGlobal();
 
 // Instantiate a FullContact client
 var fullcontact = Fullcontact.createClient('5686291ee0c6c944');
+var fullcontactVerify = Fullcontact.createClient('d5bb0047f114b740');
 
 // Instantiate a elasticsearch client
 var client = new elasticsearch.Client({
@@ -192,6 +193,31 @@ app.get('/md/:email', function(req, res) {
                     Status: 500
                 }
             }));
+            return;
+        });
+    } else {
+        res.send('Missing email');
+        return;
+    }
+});
+
+app.get('/verify/:email', function(req, res) {
+    var email = req.params.email;
+    email = email.toLowerCase();
+
+    if (email !== '') {
+        fullcontactVerify.verification.email(email, function(err, returnData) {
+            if (err) {
+                // If FullContact has no data on the url
+                sentryClient.captureMessage(err);
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({
+                    data: err
+                }));
+                return;
+            }
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(returnData));
             return;
         });
     } else {
