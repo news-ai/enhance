@@ -216,8 +216,18 @@ app.get('/verify/:email', function(req, res) {
                 }));
                 return;
             }
+
+            var emailMap = returnData.emails;
+            returnData.emails = [];
+
+            Object.keys(emailMap).map(function(key, index) {
+                returnData.emails.push(emailMap[key]);
+            });
+
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(returnData));
+            res.send(JSON.stringify({
+                data: returnData
+            }));
             return;
         });
     } else {
