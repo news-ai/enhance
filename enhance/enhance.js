@@ -3,6 +3,10 @@
 // Internal libraries
 var utils = require("./utils.js");
 
+// Node libraries
+var crypto = require('crypto');
+var http = require('http');
+
 // External libraries
 var Fullcontact = require('fullcontact');
 var elasticsearch = require('elasticsearch');
@@ -19,6 +23,10 @@ sentryClient.patchGlobal();
 // Instantiate a FullContact client
 var fullcontact = Fullcontact.createClient('5686291ee0c6c944');
 var fullcontactVerify = Fullcontact.createClient('d5bb0047f114b740');
+
+// Moz API
+var mozAccessId = 'mozscape-677f1491a0';
+var mozSecretKey = 'ad90f1947eab77585e3ac9bdf210afea';
 
 // Instantiate a elasticsearch client
 var client = new elasticsearch.Client({
@@ -124,6 +132,58 @@ app.post('/fullcontactCallback', function(req, res) {
     });
 });
 
+app.get('/moz/:url', function(req, res) {
+    var url = req.params.url;
+    url = url.toLowerCase();
+
+    if (url !== '') {
+        var cols = "68719476736";
+        var expires = Math.floor((Date.now() / 1000)) + 300;
+
+        var stringToSign = mozAccessId + "\n" + expires;
+        var signature = crypto.createHmac('sha1', mozSecretKey).update(stringToSign).digest('base64');
+        signature = encodeURIComponent(signature);
+
+        var postData = JSON.stringify([url]);
+
+        var options = {
+            hostname: 'lsapi.seomoz.com',
+            path: '/linkscape/url-metrics/?Cols=' +
+                cols + '&AccessID=' + mozAccessId +
+                '&Expires=' + expires + '&Signature=' + signature,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': postData.length
+            }
+        };
+
+        var responseData = "";
+
+        var req = http.request(options, function(response) {
+            response.setEncoding('utf8');
+            response.on('data', function(chunk) {
+                responseData += chunk;
+            });
+            response.on('end', function() {
+                responseData = JSON.parse(responseData);
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({
+                    data: responseData.length > 0 && responseData[0] || {}
+                }));
+                return;
+            });
+        });
+
+        //Make the request.
+        req.write(postData);
+        req.end();
+    } else {
+        res.send('Missing URL');
+        return;
+    }
+});
+
 app.get('/company/:url', function(req, res) {
     var url = req.params.url;
     url = url.toLowerCase();
@@ -171,7 +231,7 @@ app.get('/company/:url', function(req, res) {
             });
         });
     } else {
-        res.send('Missing email');
+        res.send('Missing URL');
         return;
     }
 });
