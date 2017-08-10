@@ -158,7 +158,7 @@ app.get('/moz/:url', function(req, res) {
             }
         };
 
-        var responseData = "";
+        var responseData = '';
 
         var req = http.request(options, function(response) {
             response.setEncoding('utf8');
@@ -241,7 +241,7 @@ app.get('/md/:email', function(req, res) {
     email = email.toLowerCase();
 
     if (email !== '') {
-        utils.searchResourceInES(email, 'md', 'contacts').then(function(returnData) {
+        utils.searchResourceInES(email, 'md', 'contacts1').then(function(returnData) {
             // If email is in ES already then we resolve it
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
@@ -376,7 +376,7 @@ app.post('/md', function(req, res) {
         }
     }
 
-    utils.addResourceToES(data.data.email, data.data, 'md', 'contacts').then(function(status) {
+    utils.addResourceToES(data.data.email, data.data, 'md', 'contacts1').then(function(status) {
         utils.addContactMetadataToES(organizations, 'md', 'metadata1').then(function(status) {
             utils.addContactMetadataToES(organizationNames, 'md', 'publications').then(function(status) {
                 utils.addContactMetadataToES(rssFeeds, 'md', 'feeds').then(function(status) {
