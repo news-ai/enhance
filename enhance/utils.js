@@ -137,6 +137,36 @@ function searchResourceInES(resourceId, resourceName, typeName) {
     return deferred.promise;
 }
 
+function bulkSearchResourceInES(resourceIds, resourceName, typeName) {
+    var deferred = Q.defer();
+    var bulkDocs = [];
+
+    for (var i = 0; i < resourceIds.length; i++) {
+        var doc = {
+            _index: resourceName,
+            _type: typeName,
+            _id: resourceIds[i]
+        }
+
+        bulkDocs.push(doc);
+    }
+
+    client.mget({
+        body: {
+            docs: bulkDocs
+        }
+    }, function(error, response) {
+        if (error) {
+            sentryClient.captureMessage(error);
+            deferred.reject(error);
+        } else {
+            deferred.resolve(response);
+        }
+    });
+
+    return deferred.promise;
+}
+
 function searchResourceForQuery(query, resourceName) {
     var deferred = Q.defer();
 
@@ -162,3 +192,4 @@ exports.searchResourceInES = searchResourceInES;
 exports.addContactMetadataToES = addContactMetadataToES;
 exports.addResourceToES = addResourceToES;
 exports.searchResourceForQuery = searchResourceForQuery;
+exports.bulkSearchResourceInES = bulkSearchResourceInES;

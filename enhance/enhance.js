@@ -464,6 +464,34 @@ app.get('/fullcontact/:email', function(req, res) {
     }
 });
 
+app.post('/fullcontact', function(req, res) {
+    var data = req.body;
+    var emails = data.emails;
+
+    var splitEmails = emails.split(',');
+    if (splitEmails.length > 0) {
+        utils.bulkSearchResourceInES(splitEmails, 'database', 'contacts').then(function(returnData) {
+            // If email is in ES already then we resolve it
+            console.log(returnData);
+
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({
+                data: returnData
+            }));
+            return;
+        }, function(err) {
+            // If email is not in ES then we look it up
+            sentryClient.captureMessage(err);
+            console.error(err);
+            res.send('An error occurred');
+            return;
+        });
+    } else {
+        res.send('Missing emails');
+        return;
+    }
+});
+
 app.get('/twitter/:email/:twitteruser', function(req, res) {
     var twitterUser = req.params.twitteruser;
     var email = req.params.email;
