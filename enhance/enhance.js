@@ -42,6 +42,33 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
+function addFullContactProfileToEs(email, returnData) {
+    var deferred = Q.defer();
+
+    var organizations = [];
+    if (returnData && returnData.organizations) {
+        var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
+    }
+
+    utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
+        utils.addContactMetadataToES(organizations, 'database', 'metadata1').then(function(status) {
+            deferred.resolve(returnData);
+            return;
+        }, function(error) {
+            // Return data not error. Doesn't matter if we fail to add metadata
+            sentryClient.captureMessage(error);
+            deferred.resolve(returnData);
+            return;
+        });
+    }, function(error) {
+        sentryClient.captureMessage(error);
+        deferred.resolve(error);
+        return;
+    });
+
+    return deferred.promise;
+}
+
 function getFullContactProfile(email) {
     var deferred = Q.defer();
 
@@ -54,23 +81,12 @@ function getFullContactProfile(email) {
         }
 
         if (returnData.status === 200) {
-            var organizations = [];
-            if (returnData && returnData.organizations) {
-                var organizations = utils.addContactOrganizationsToES(email, returnData.organizations);
-            }
-            utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
-                utils.addContactMetadataToES(organizations, 'database', 'metadata1').then(function(status) {
-                    deferred.resolve(returnData);
-                    return;
-                }, function(error) {
-                    // Return data not error. Doesn't matter if we fail to add metadata
-                    sentryClient.captureMessage(error);
-                    deferred.resolve(returnData);
-                    return;
-                });
+            addFullContactProfileToEs(email, returnData).then(function(status) {
+                deferred.resolve(returnData);
+                return;
             }, function(error) {
                 sentryClient.captureMessage(error);
-                deferred.resolve(error);
+                deferred.resolve(returnData);
                 return;
             });
         } else {
@@ -81,6 +97,68 @@ function getFullContactProfile(email) {
     });
 
     return deferred.promise;
+}
+
+function addFullContactProfileToEsChunk(emails, socialProfiles) {
+    var allPromises = [];
+
+    for (var i = emails.length - 1; i >= 0; i--) {
+        var tempFunction = addFullContactProfileToEs(emails[i], socialProfiles[i]);
+        allPromises.push(tempFunction);
+    }
+
+    return Q.all(allPromises);
+}
+
+function getChunkLookupEmailProfiles(emails) {
+    var deferred = Q.defer();
+    var multi = fullcontact.multi();
+
+    for (var i = 0; i < emails.length; i++) {
+        multi.person.email(emails[i]);
+    }
+
+    multi.exec(function(err, resp) {
+        if (err) {
+            sentryClient.captureMessage(err);
+            deferred.resolve([]);
+            return;
+        } else {
+            var fullContactProfiles = [];
+            for (var requestUrl in resp) {
+                fullContactProfiles.push(resp[requestUrl]);
+            }
+            addFullContactProfileToEsChunk(emails, fullContactProfiles).then(function(status) {
+                deferred.resolve(status);
+                return;
+            }, function(error) {
+                sentryClient.captureMessage(err);
+                deferred.resolve(fullContactProfiles);
+                return;
+            })
+            deferred.resolve([]);
+            return;
+        }
+    });
+
+    return deferred.promise;
+}
+
+function getLookUpEmailProfiles(emails) {
+    var allPromises = [];
+
+    for (var i = emails.length - 1; i >= 0; i--) {
+        emails[i] = emails[i].toLowerCase();
+    }
+
+    var i, j, temp, chunk = 18;
+    for (i = 0, j = emails.length; i < j; i += chunk) {
+        temp = emails.slice(i, i + chunk);
+        var tempFunction = getChunkLookupEmailProfiles(emails);
+        allPromises.push(tempFunction);
+    }
+
+    return Q.all(allPromises);
 }
 
 app.post('/fullcontactCallback', function(req, res) {
@@ -469,16 +547,47 @@ app.post('/fullcontact', function(req, res) {
     var emails = data.emails;
 
     var splitEmails = emails.split(',');
+    for (var i = splitEmails.length - 1; i >= 0; i--) {
+        splitEmails[i] = splitEmails[i].toLowerCase();
+    }
+
     if (splitEmails.length > 0) {
         utils.bulkSearchResourceInES(splitEmails, 'database', 'contacts').then(function(returnData) {
             // If email is in ES already then we resolve it
-            console.log(returnData);
+            if (returnData.docs && returnData.docs.length > 0) {
+                var profiles = [];
+                var lookupEmails = [];
+                for (var i = 0; i < returnData.docs.length; i++) {
+                    if (returnData.docs[i].found) {
+                        profiles.push(returnData.docs[i]._source.data)
+                    } else {
+                        lookupEmails.push(returnData.docs[i]._id);
+                    }
+                }
 
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({
-                data: returnData
-            }));
-            return;
+                getLookUpEmailProfiles(lookupEmails, 'database', 'contacts').then(function(lookupProfiles) {
+                    var toReturn = profiles.concat(lookupProfiles)
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: toReturn
+                    }));
+                    return;
+                }, function(err) {
+                    sentryClient.captureMessage(err);
+                    console.error(err);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: profiles
+                    }));
+                    return;
+                });
+            } else {
+                var err = 'No profiles found'
+                sentryClient.captureMessage(err);
+                console.error(err);
+                res.send('An error occurred');
+                return;
+            }
         }, function(err) {
             // If email is not in ES then we look it up
             sentryClient.captureMessage(err);
