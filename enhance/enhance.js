@@ -52,10 +52,12 @@ function addFullContactProfileToEs(email, returnData) {
 
     utils.addResourceToES(email, returnData, 'database', 'contacts').then(function(status) {
         utils.addContactMetadataToES(organizations, 'database', 'metadata1').then(function(status) {
+            returnData.email = email;
             deferred.resolve(returnData);
             return;
         }, function(error) {
             // Return data not error. Doesn't matter if we fail to add metadata
+            returnData.email = email;
             sentryClient.captureMessage(error);
             deferred.resolve(returnData);
             return;
@@ -103,8 +105,10 @@ function addFullContactProfileToEsChunk(emails, socialProfiles) {
     var allPromises = [];
 
     for (var i = emails.length - 1; i >= 0; i--) {
-        var tempFunction = addFullContactProfileToEs(emails[i], socialProfiles[i]);
-        allPromises.push(tempFunction);
+        if (socialProfiles[i].status == 200) {
+            var tempFunction = addFullContactProfileToEs(emails[i], socialProfiles[i]);
+            allPromises.push(tempFunction);
+        }
     }
 
     return Q.all(allPromises);
@@ -129,13 +133,14 @@ function getChunkLookupEmailProfiles(emails) {
                 fullContactProfiles.push(resp[requestUrl]);
             }
             addFullContactProfileToEsChunk(emails, fullContactProfiles).then(function(status) {
+                console.log(status);
                 deferred.resolve(status);
                 return;
             }, function(error) {
                 sentryClient.captureMessage(err);
                 deferred.resolve(fullContactProfiles);
                 return;
-            })
+            });
             deferred.resolve([]);
             return;
         }
@@ -559,6 +564,7 @@ app.post('/fullcontact', function(req, res) {
                 var lookupEmails = [];
                 for (var i = 0; i < returnData.docs.length; i++) {
                     if (returnData.docs[i].found) {
+                        returnData.docs[i]._source.data.email = returnData.docs[i]._id;
                         profiles.push(returnData.docs[i]._source.data)
                     } else {
                         lookupEmails.push(returnData.docs[i]._id);
@@ -566,10 +572,14 @@ app.post('/fullcontact', function(req, res) {
                 }
 
                 getLookUpEmailProfiles(lookupEmails, 'database', 'contacts').then(function(lookupProfiles) {
-                    var toReturn = profiles.concat(lookupProfiles)
+                    for (var i = lookupProfiles.length - 1; i >= 0; i--) {
+                        if (lookupProfiles[i] && Object.keys(lookupProfiles[i]) > 0) {
+                            profiles.push(lookupProfiles[i]);
+                        }
+                    }
                     res.setHeader('Content-Type', 'application/json');
                     res.send(JSON.stringify({
-                        data: toReturn
+                        data: profiles
                     }));
                     return;
                 }, function(err) {
