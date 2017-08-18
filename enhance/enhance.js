@@ -156,11 +156,13 @@ function getLookUpEmailProfiles(emails) {
         emails[i] = emails[i].toLowerCase();
     }
 
-    var i, j, temp, chunk = 18;
-    for (i = 0, j = emails.length; i < j; i += chunk) {
-        temp = emails.slice(i, i + chunk);
-        var tempFunction = getChunkLookupEmailProfiles(emails);
-        allPromises.push(tempFunction);
+    if (emails.length > 0) {
+        var i, j, temp, chunk = 18;
+        for (i = 0, j = emails.length; i < j; i += chunk) {
+            temp = emails.slice(i, i + chunk);
+            var tempFunction = getChunkLookupEmailProfiles(emails);
+            allPromises.push(tempFunction);
+        }
     }
 
     return Q.all(allPromises);
@@ -551,13 +553,12 @@ app.post('/fullcontact', function(req, res) {
     var data = req.body;
     var emails = data.emails;
 
-    var splitEmails = emails.split(',');
-    for (var i = splitEmails.length - 1; i >= 0; i--) {
-        splitEmails[i] = splitEmails[i].toLowerCase();
+    for (var i = emails.length - 1; i >= 0; i--) {
+        emails[i] = emails[i].toLowerCase();
     }
 
-    if (splitEmails.length > 0) {
-        utils.bulkSearchResourceInES(splitEmails, 'database', 'contacts').then(function(returnData) {
+    if (emails.length > 0) {
+        utils.bulkSearchResourceInES(emails, 'database', 'contacts').then(function(returnData) {
             // If email is in ES already then we resolve it
             if (returnData.docs && returnData.docs.length > 0) {
                 var profiles = [];
@@ -565,7 +566,7 @@ app.post('/fullcontact', function(req, res) {
                 for (var i = 0; i < returnData.docs.length; i++) {
                     if (returnData.docs[i].found) {
                         returnData.docs[i]._source.data.email = returnData.docs[i]._id;
-                        profiles.push(returnData.docs[i]._source.data)
+                        profiles.push(returnData.docs[i]._source.data);
                     } else {
                         lookupEmails.push(returnData.docs[i]._id);
                     }
