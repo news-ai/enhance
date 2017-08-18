@@ -133,7 +133,6 @@ function getChunkLookupEmailProfiles(emails) {
                 fullContactProfiles.push(resp[requestUrl]);
             }
             addFullContactProfileToEsChunk(emails, fullContactProfiles).then(function(status) {
-                console.log(status);
                 deferred.resolve(status);
                 return;
             }, function(error) {
@@ -141,8 +140,6 @@ function getChunkLookupEmailProfiles(emails) {
                 deferred.resolve(fullContactProfiles);
                 return;
             });
-            deferred.resolve([]);
-            return;
         }
     });
 
@@ -573,9 +570,12 @@ app.post('/fullcontact', function(req, res) {
                 }
 
                 getLookUpEmailProfiles(lookupEmails, 'database', 'contacts').then(function(lookupProfiles) {
-                    for (var i = lookupProfiles.length - 1; i >= 0; i--) {
-                        if (lookupProfiles[i] && Object.keys(lookupProfiles[i]) > 0) {
-                            profiles.push(lookupProfiles[i]);
+                    if (lookupProfiles.length > 0) {
+                        lookupProfiles = lookupProfiles[0];
+                        for (var i = lookupProfiles.length - 1; i >= 0; i--) {
+                            if (lookupProfiles[i] && Object.keys(lookupProfiles[i]).length > 0) {
+                                profiles.push(lookupProfiles[i]);
+                            }
                         }
                     }
                     res.setHeader('Content-Type', 'application/json');
