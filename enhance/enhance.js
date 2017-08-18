@@ -92,7 +92,6 @@ function getFullContactProfile(email) {
                 return;
             });
         } else {
-            sentryClient.captureMessage(error);
             deferred.resolve(returnData);
             return;
         }
