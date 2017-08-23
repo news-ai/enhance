@@ -76,6 +76,8 @@ function addResourceToES(email, fullContactData, resourceName, typeName) {
         data: dataRecord
     });
 
+    console.log(esActions);
+
     client.bulk({
         body: esActions
     }, function(error, response) {

@@ -100,6 +100,43 @@ function getFullContactProfile(email) {
     return deferred.promise;
 }
 
+function getFullContactVerify(email) {
+    var deferred = Q.defer();
+
+    fullcontact.verification.email(email, function(err, returnData) {
+        if (err) {
+            // If FullContact has no data on the email
+            sentryClient.captureMessage(err);
+            deferred.resolve(err);
+            return;
+        }
+
+        var emailMap = returnData.emails;
+        returnData.email = {};
+
+        Object.keys(emailMap).map(function(key, index) {
+            returnData.email = emailMap[key];
+        });
+
+        delete returnData.emails;
+        if (returnData.status === 200) {
+            utils.addResourceToES(email, returnData, 'verifications', 'email').then(function(status) {
+                deferred.resolve(returnData);
+                return;
+            }, function(error) {
+                sentryClient.captureMessage(error);
+                deferred.resolve(returnData);
+                return;
+            });
+        } else {
+            deferred.resolve(returnData);
+            return;
+        }
+    });
+
+    return deferred.promise;
+}
+
 function addFullContactProfileToEsChunk(emails, socialProfiles) {
     var allPromises = [];
 
@@ -162,6 +199,26 @@ function getLookUpEmailProfiles(emails) {
     }
 
     return Q.all(allPromises);
+}
+
+function getEmailVerifyAndFullContactProfile(email) {
+    var deferred = Q.defer();
+    var multi = fullcontact.multi();
+
+    multi.person.email(email);
+    multi.verification.email(email);
+
+    multi.exec(function(err, resp) {
+        if (err) {
+            sentryClient.captureMessage(err);
+            deferred.resolve({  });
+            return;
+        } else {
+            console.log(resp);
+        }
+    });
+
+    return deferred.promise;
 }
 
 app.post('/fullcontactCallback', function(req, res) {
@@ -523,6 +580,54 @@ app.get('/fullcontact/:email', function(req, res) {
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(returnData._source));
             return;
+        }, function(err) {
+            // If email is not in ES then we look it up
+            getFullContactProfile(email).then(function(returnData) {
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({
+                    data: returnData
+                }));
+                return;
+            }, function(error) {
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({
+                    data: error
+                }));
+                return;
+            });
+        });
+    } else {
+        res.send('Missing email');
+        return;
+    }
+});
+
+app.get('/fullcontact2/:email', function(req, res) {
+    var email = req.params.email;
+    email = email.toLowerCase();
+
+    if (email !== '') {
+        utils.searchResourceInES(email, 'database', 'contacts').then(function(enrichData) {
+            utils.searchResourceInES(email, 'verifications', 'email').then(function(verificationData) {
+                // If email is in ES already then we resolve it
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({
+                    enrich: enrichData._source,
+                    verify: verificationData._source
+                }));
+                return;
+            }, function(err) {
+                getFullContactVerify(email).then(function (verificationData){
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        enrich: enrichData._source,
+                        verify: verificationData
+                    }));
+                    return;
+                }, function(error) {
+                    console.log(error);
+                })
+            });
         }, function(err) {
             // If email is not in ES then we look it up
             getFullContactProfile(email).then(function(returnData) {
