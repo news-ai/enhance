@@ -211,10 +211,37 @@ function getEmailVerifyAndFullContactProfile(email) {
     multi.exec(function(err, resp) {
         if (err) {
             sentryClient.captureMessage(err);
-            deferred.resolve({  });
+            deferred.resolve({});
             return;
         } else {
-            console.log(resp);
+            var returnData = {};
+            if (Object.keys(resp).length > 0) {
+                for (var i = 0; i < Object.keys(resp).length; i++) {
+                    var key = Object.keys(resp)[i];
+                    if (key.indexOf('verification') !== -1) {
+                        returnData.verify = resp[key];
+                    } else if (key.indexOf('person.json') !== -1) {
+                        returnData.enrich = resp[key];
+                    }
+                }
+
+                if (returnData.verify) {
+                    var emailMap = returnData.verify && returnData.verify.emails;
+                    returnData.verify.email = {};
+
+                    Object.keys(emailMap).map(function(key, index) {
+                        returnData.verify.email = emailMap[key];
+                    });
+
+                    delete returnData.verify.emails;
+                }
+
+                deferred.resolve(returnData);
+                return;
+            } else {
+                deferred.resolve({});
+                return;
+            }
         }
     });
 
@@ -607,6 +634,14 @@ app.get('/fullcontact2/:email', function(req, res) {
     email = email.toLowerCase();
 
     if (email !== '') {
+        // 4 cases:
+        // 1. Can find contact and verification in database
+        // 2. Can find contact but not verification in database
+        // 3. Can't find contact but can find verification in database
+        // 4. Can't find anything
+
+        // This is first 2 cases
+        // If contact is found and
         utils.searchResourceInES(email, 'database', 'contacts').then(function(enrichData) {
             utils.searchResourceInES(email, 'verifications', 'email').then(function(verificationData) {
                 // If email is in ES already then we resolve it
@@ -617,31 +652,64 @@ app.get('/fullcontact2/:email', function(req, res) {
                 }));
                 return;
             }, function(err) {
-                getFullContactVerify(email).then(function (verificationData){
+                // It is not in database so we get it
+                getFullContactVerify(email).then(function(verificationData) {
                     res.setHeader('Content-Type', 'application/json');
                     res.send(JSON.stringify({
-                        enrich: enrichData._source,
-                        verify: verificationData
+                        data: {
+                            enrich: enrichData._source,
+                            verify: verificationData
+                        }
                     }));
                     return;
                 }, function(error) {
-                    console.log(error);
-                })
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: {
+                            enrich: enrichData._source,
+                            verify: {}
+                        }
+                    }));
+                    return;
+                });
             });
         }, function(err) {
-            // If email is not in ES then we look it up
-            getFullContactProfile(email).then(function(returnData) {
-                res.setHeader('Content-Type', 'application/json');
-                res.send(JSON.stringify({
-                    data: returnData
-                }));
-                return;
-            }, function(error) {
-                res.setHeader('Content-Type', 'application/json');
-                res.send(JSON.stringify({
-                    data: error
-                }));
-                return;
+            // Can we find verification
+            utils.searchResourceInES(email, 'verifications', 'email').then(function(verificationData) {
+                getFullContactProfile(email).then(function(enrichData) {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: {
+                            enrich: enrichData,
+                            verify: verificationData._source
+                        }
+                    }));
+                    return;
+                }, function(error) {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: {
+                            enrich: {},
+                            verify: verificationData._source
+                        }
+                    }));
+                    return;
+                });
+            }, function(err) {
+                // We can't find either verification or full contact profile
+                getEmailVerifyAndFullContactProfile(email).then(function(returnData) {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: returnData
+                    }));
+                    return;
+                }, function(error) {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(JSON.stringify({
+                        data: error
+                    }));
+                    return;
+                });
             });
         });
     } else {
