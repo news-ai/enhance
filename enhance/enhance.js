@@ -236,8 +236,34 @@ function getEmailVerifyAndFullContactProfile(email) {
                     delete returnData.verify.emails;
                 }
 
-                deferred.resolve(returnData);
-                return;
+                var returnDataFormat = {
+                    enrich: {
+                        data: returnData.enrich
+                    },
+                    verify: {
+                        data: returnData.verify
+                    }
+                };
+
+                addFullContactProfileToEs(email, returnData.enrich).then(function(enrichData) {
+                    utils.addResourceToES(email, returnData.verify, 'verifications', 'email').then(function(verifyData) {
+                        deferred.resolve(returnDataFormat);
+                        return;
+                    }, function(error) {
+                        sentryClient.captureMessage(error);
+                        deferred.resolve(returnDataFormat);
+                        return;
+                    });
+                }, function(error) {
+                    utils.addResourceToES(email, returnData.verify, 'verifications', 'email').then(function(status) {
+                        deferred.resolve(returnDataFormat);
+                        return;
+                    }, function(error) {
+                        sentryClient.captureMessage(error);
+                        deferred.resolve(returnDataFormat);
+                        return;
+                    });
+                });
             } else {
                 deferred.resolve({});
                 return;
@@ -647,8 +673,10 @@ app.get('/fullcontact2/:email', function(req, res) {
                 // If email is in ES already then we resolve it
                 res.setHeader('Content-Type', 'application/json');
                 res.send(JSON.stringify({
-                    enrich: enrichData._source,
-                    verify: verificationData._source
+                    data: {
+                        enrich: enrichData._source,
+                        verify: verificationData._source
+                    }
                 }));
                 return;
             }, function(err) {
